@@ -4,6 +4,7 @@ Reference: PSID v2NG specification, https://www.hvsc.c64.org/download/C64Music/D
 """
 from __future__ import annotations
 
+import hashlib
 import struct
 from dataclasses import dataclass, field
 from typing import Optional
@@ -158,3 +159,38 @@ def actual_load_address(h: SidHeader) -> int:
     if len(h.data) < 2:
         return 0
     return h.data[0] | (h.data[1] << 8)
+
+
+# ---------------------------------------------------------------------------
+# Songlength database MD5 hashes
+#
+# libsidplayfp ships two hash variants for the HVSC Songlengths database.
+# Reference: libsidplayfp/src/sidtune/PSID.cpp, createMD5 / createMD5New.
+# ---------------------------------------------------------------------------
+
+
+def md5_old(h: SidHeader) -> str:
+    """libsidplayfp createMD5() — used by older Songlengths.md5 files.
+
+    Order: c64-data + init(LE16) + play(LE16) + songs(LE16)
+           + 1 byte per song (0=VBI, 60=CIA)
+           + 1 byte of 0x02 iff clock == NTSC.
+    """
+    m = hashlib.md5()
+    m.update(h.data)
+    m.update(struct.pack("<H", h.init_address))
+    m.update(struct.pack("<H", h.play_address))
+    m.update(struct.pack("<H", h.songs))
+    for i in range(h.songs):
+        m.update(bytes([60 if (h.speed >> i) & 1 else 0]))
+    if ((h.flags >> 2) & 0x3) == 2:  # CLOCK_NTSC exactly
+        m.update(b"\x02")
+    return m.hexdigest()
+
+
+def md5_new(blob: bytes) -> str:
+    """libsidplayfp createMD5New() — current HVSC Songlengths.md5 format.
+
+    MD5 of the file bytes as-is (header included).
+    """
+    return hashlib.md5(blob).hexdigest()

@@ -20,11 +20,19 @@ from .header import SidHeader
 # Pitch detection
 # ---------------------------------------------------------------------------
 
-FRAME_RATE_HZ = 50
+FRAME_RATE_HZ_PAL = 50
+FRAME_RATE_HZ_NTSC = 60
 WINDOW_MS = 20
 MIN_HZ = 65.0
 MAX_HZ = 3500.0
 SILENCE_RMS = 0.01
+
+# C64 system clocks (Hz). SID register = round(f_Hz * 2^24 / clock).
+C64_CLOCK_PAL = 985248
+C64_CLOCK_NTSC = 1022730
+
+CLOCK_FLAG = {"pal": 0x04, "ntsc": 0x08}
+MODEL_FLAG = {"6581": 0x10, "8580": 0x20}
 
 
 def _load_audio(path: Path) -> tuple[list[float], int]:
@@ -99,15 +107,20 @@ def _detect_pitches(samples: list[float], sr: int) -> list[float]:
 
         y = np.asarray(samples, dtype=np.float32)
         hop = max(1, int(round(sr * WINDOW_MS / 1000)))
-        f0 = librosa.yin(
+        frame = max(2048, hop * 4)
+        # pyin returns (f0, voiced_flag, voiced_prob); it suppresses harmonic
+        # errors and explicitly flags unvoiced frames, which is what we want
+        # for separating notes from silence/noise.
+        f0, voiced, _ = librosa.pyin(
             y, fmin=MIN_HZ, fmax=MAX_HZ, sr=sr,
-            frame_length=max(2048, hop * 4), hop_length=hop,
+            frame_length=frame, hop_length=hop,
         )
-        rms = librosa.feature.rms(y=y, frame_length=hop * 4, hop_length=hop)[0]
+        rms = librosa.feature.rms(y=y, frame_length=frame, hop_length=hop)[0]
         out: list[float] = []
         for i, p in enumerate(f0):
             r = rms[i] if i < len(rms) else 0.0
-            if r < SILENCE_RMS or not math.isfinite(p):
+            v = bool(voiced[i]) if i < len(voiced) else False
+            if not v or r < SILENCE_RMS or not math.isfinite(p):
                 out.append(0.0)
             else:
                 out.append(float(p))
@@ -126,22 +139,20 @@ def _detect_pitches(samples: list[float], sr: int) -> list[float]:
 # Note quantisation
 # ---------------------------------------------------------------------------
 
-SID_FREQ_FACTOR_PAL = (1 << 24) / 985248.0
-
-
 def _hz_to_midi(hz: float) -> int | None:
     if hz <= 0:
         return None
     return int(round(69 + 12 * math.log2(hz / 440.0)))
 
 
-def _midi_to_sid_reg(midi: int) -> int:
+def _midi_to_sid_reg(midi: int, clock: str) -> int:
+    factor = (1 << 24) / (C64_CLOCK_PAL if clock == "pal" else C64_CLOCK_NTSC)
     hz = 440.0 * (2 ** ((midi - 69) / 12.0))
-    val = int(round(hz * SID_FREQ_FACTOR_PAL))
+    val = int(round(hz * factor))
     return max(0, min(0xFFFF, val))
 
 
-def _quantise(pitches: list[float], max_notes: int = 255) -> list[tuple[int, int]]:
+def _quantise(pitches: list[float], clock: str, max_notes: int = 255) -> list[tuple[int, int]]:
     notes: list[tuple[int, int]] = []
     cur_midi: int | None = -1
     cur_len = 0
@@ -153,7 +164,7 @@ def _quantise(pitches: list[float], max_notes: int = 255) -> list[tuple[int, int
         if cur_midi is None:
             notes.append((0, min(cur_len, 255)))
         else:
-            notes.append((_midi_to_sid_reg(cur_midi), min(cur_len, 255)))
+            notes.append((_midi_to_sid_reg(cur_midi, clock), min(cur_len, 255)))
         cur_len = 0
 
     for hz in pitches:
@@ -273,21 +284,31 @@ def convert_audio(
     author: str = "sidconverter",
     released: str = "2026",
     max_notes: int = 255,
+    clock: str = "pal",
+    model: str = "6581",
 ) -> tuple[int, float]:
     """Convert input audio to a PSID file at output_path.
 
     Returns (n_notes, duration_seconds). Raises SystemExit on hard errors.
     """
+    clock = clock.lower()
+    model = model.lower()
+    if clock not in CLOCK_FLAG:
+        raise SystemExit(f"error: clock must be pal or ntsc, got {clock!r}")
+    if model not in MODEL_FLAG:
+        raise SystemExit(f"error: model must be 6581 or 8580, got {model!r}")
+
     samples, sr = _load_audio(input_path)
     if not samples:
         raise SystemExit("error: empty audio")
 
     pitches = _detect_pitches(samples, sr)
-    notes = _quantise(pitches, max_notes=min(255, max(1, max_notes)))
+    notes = _quantise(pitches, clock, max_notes=min(255, max(1, max_notes)))
     if not notes:
         raise SystemExit("error: no pitched content detected")
 
     data = _build_payload(notes)
+    flags = CLOCK_FLAG[clock] | MODEL_FLAG[model]
     h = SidHeader(
         magic="PSID",
         version=2,
@@ -301,21 +322,31 @@ def convert_audio(
         name=name,
         author=author,
         released=released,
-        flags=0x0014,
+        flags=flags,
         data=data,
     )
     output_path.write_bytes(h.to_bytes())
-    return len(notes), sum(d for _, d in notes) / FRAME_RATE_HZ
+    frame_rate = FRAME_RATE_HZ_PAL if clock == "pal" else FRAME_RATE_HZ_NTSC
+    return len(notes), sum(d for _, d in notes) / frame_rate
 
 
-def add_parser(sub: argparse._SubParsersAction) -> argparse.ArgumentParser:
-    p = sub.add_parser("from-audio", help="synthesize a basic .sid from audio")
+def _add_args(p: argparse.ArgumentParser) -> argparse.ArgumentParser:
     p.add_argument("input", type=Path)
     p.add_argument("-o", "--output", type=Path, required=True)
     p.add_argument("--name", default="Untitled")
     p.add_argument("--author", default="sidconverter")
     p.add_argument("--released", default="2026")
     p.add_argument("--max-notes", type=int, default=255, dest="max_notes")
+    p.add_argument("--clock", choices=("pal", "ntsc"), default="pal",
+                   help="C64 system clock used for SID frequency tuning")
+    p.add_argument("--model", choices=("6581", "8580"), default="6581",
+                   help="declare SID model in PSID flags")
+    return p
+
+
+def add_parser(sub: argparse._SubParsersAction) -> argparse.ArgumentParser:
+    p = sub.add_parser("from-audio", help="synthesize a basic .sid from audio")
+    _add_args(p)
     p.set_defaults(func=run)
     return p
 
@@ -327,20 +358,14 @@ def run(args: argparse.Namespace) -> int:
     n, secs = convert_audio(
         args.input, args.output,
         name=args.name, author=args.author, released=args.released,
-        max_notes=args.max_notes,
+        max_notes=args.max_notes, clock=args.clock, model=args.model,
     )
     print(f"wrote {args.output}  ({n} notes, {secs:.1f}s of music)")
     return 0
 
 
 def main(argv: list[str] | None = None) -> int:
-    p = argparse.ArgumentParser(description="Convert audio to a basic .sid")
-    p.add_argument("input", type=Path)
-    p.add_argument("-o", "--output", type=Path, required=True)
-    p.add_argument("--name", default="Untitled")
-    p.add_argument("--author", default="sidconverter")
-    p.add_argument("--released", default="2026")
-    p.add_argument("--max-notes", type=int, default=255, dest="max_notes")
+    p = _add_args(argparse.ArgumentParser(description="Convert audio to a basic .sid"))
     return run(p.parse_args(argv))
 
 

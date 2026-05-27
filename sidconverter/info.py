@@ -2,37 +2,14 @@
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
-import struct
 import sys
 from pathlib import Path
 
-from .header import SidHeader, actual_load_address
+from .header import SidHeader, actual_load_address, md5_new, md5_old
 
 
-def hvsc_songlengths_hash(h: SidHeader) -> str:
-    """SHA-1 used by HVSC's Songlengths.md5 (despite the filename).
-
-    See the PSID v2NG spec, section 6.
-    """
-    load = actual_load_address(h)
-    data = h.data
-    if h.load_address == 0 and len(data) >= 2:
-        data = data[2:]
-    m = hashlib.sha1()
-    m.update(struct.pack("<H", load))
-    m.update(struct.pack("<H", h.init_address))
-    m.update(struct.pack("<H", h.play_address))
-    m.update(struct.pack("<H", h.songs))
-    for i in range(h.songs):
-        speed_byte = 60 if (h.speed >> i) & 1 else 0
-        m.update(bytes([speed_byte]))
-    m.update(data)
-    return m.hexdigest()
-
-
-def to_dict(h: SidHeader, path: Path) -> dict:
+def to_dict(h: SidHeader, path: Path, raw: bytes | None = None) -> dict:
     return {
         "path": str(path),
         "magic": h.magic,
@@ -66,7 +43,8 @@ def to_dict(h: SidHeader, path: Path) -> dict:
         if h.third_sid_address
         else None,
         "data_size": len(h.data),
-        "hvsc_sha1": hvsc_songlengths_hash(h),
+        "md5_old": md5_old(h),
+        "md5_new": md5_new(raw) if raw is not None else md5_new(h.to_bytes()),
     }
 
 
@@ -85,7 +63,8 @@ def format_pretty(d: dict) -> str:
         + (f"  +2nd={f['second_sid_model']}" if d["second_sid_address"] else "")
         + (f"  +3rd={f['third_sid_model']}" if d["third_sid_address"] else "")
         + ("  MUS" if f["mus_data"] else ""),
-        f"  hvsc sha1:  {d['hvsc_sha1']}",
+        f"  md5 (old):  {d['md5_old']}",
+        f"  md5 (new):  {d['md5_new']}",
     ]
     return "\n".join(lines)
 
@@ -105,7 +84,7 @@ def run(args: argparse.Namespace) -> int:
     except (OSError, ValueError) as e:
         print(f"error: {e}", file=sys.stderr)
         return 1
-    d = to_dict(h, args.path)
+    d = to_dict(h, args.path, raw=blob)
     print(json.dumps(d, indent=2) if args.json else format_pretty(d))
     return 0
 

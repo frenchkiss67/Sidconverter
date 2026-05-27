@@ -50,8 +50,9 @@ python3 scripts/sid_info.py path/to/tune.sid --json
 ```
 
 Prints magic, version, addresses, song count, name/author/released, flags
-(clock + SID model + extra SID addresses), and the SHA-1 used by HVSC's
-Songlengths database.
+(clock + SID model + extra SID addresses), and both MD5 hashes used by the
+HVSC Songlengths database (`md5 (old)` = libsidplayfp `createMD5` over
+data+addresses+speed; `md5 (new)` = MD5 of the file as-is).
 
 ### Render SID → WAV / MP3
 
@@ -63,7 +64,12 @@ python3 scripts/sid_to_wav.py tune.sid -o tune.wav            # default song, 3 
 python3 scripts/sid_to_wav.py tune.sid -o tune.wav -t 120     # 120 seconds
 python3 scripts/sid_to_wav.py tune.sid -o tune.wav -s 2       # song #2
 python3 scripts/sid_to_wav.py tune.sid -o tune.mp3            # auto-pipes to ffmpeg
+python3 scripts/sid_to_wav.py tune.sid -o tune.wav -m n -f 44100  # force 8580, 44.1 kHz
 ```
+
+Extra knobs (passed through to sidplayfp): `-f SR` sample rate, `-m {o,n}`
+SID model (o=6581, n=8580; append `f` to disable the filter), `-b POS`
+start position `[mins:]secs[.ms]`.
 
 If `sidplayfp` is missing the script prints the apt/brew commands to install
 it (`sudo apt install sidplayfp` on Debian/Ubuntu, `brew install sidplayfp`
@@ -106,9 +112,11 @@ presenting the output to the user.
 - User wants to flip the magic between PSID and RSID → `sid_format_convert.py`.
 - User wants to turn a hummed melody / wav / mp3 into a .sid → `audio_to_sid.py`,
   and warn that the result is a single-voice approximation.
-- User asks about a SID hash for HVSC Songlengths.md5 → `sid_info.py` already
-  prints it; the hash is SHA-1 over the data portion (post-header) per the
-  HVSC spec, not MD5 of the whole file.
+- User asks about a SID hash for HVSC Songlengths.md5 → `sid_info.py` prints
+  both MD5 variants used by libsidplayfp: `md5 (old)` for legacy entries
+  (createMD5: data + init/play/songs little-endian + per-song speed byte +
+  optional NTSC 0x02 byte) and `md5 (new)` (MD5 of the file as written, used
+  by current HVSC releases).
 
 ## Dependencies
 

@@ -8,6 +8,10 @@ from pathlib import Path
 from .header import SidHeader, actual_load_address
 
 
+def _in_rom(addr: int) -> bool:
+    return 0xA000 <= addr <= 0xBFFF or 0xD000 <= addr <= 0xFFFF
+
+
 def warnings_for(h: SidHeader, target: str) -> list[str]:
     warns: list[str] = []
     if target == "RSID":
@@ -16,10 +20,25 @@ def warnings_for(h: SidHeader, target: str) -> list[str]:
                 f"PSID play address ${h.play_address:04X} is non-zero; RSID requires play=0 "
                 "and a self-driven player (CIA IRQ)."
             )
-        if actual_load_address(h) < 0x07E8:
+        if h.speed != 0:
             warns.append(
-                f"load address ${actual_load_address(h):04X} is below $07E8 — RSID forbids "
-                "loading into the zero/stack pages or BASIC pointers."
+                f"speed ${h.speed:08X} is non-zero; RSID requires speed=0 (no per-tune speed)."
+            )
+        load = actual_load_address(h)
+        if load < 0x07E8:
+            warns.append(
+                f"load address ${load:04X} is below $07E8 — RSID forbids loading into the "
+                "zero/stack pages or BASIC pointers."
+            )
+        if h.init_address and (_in_rom(h.init_address) or h.init_address < 0x07E8):
+            warns.append(
+                f"init address ${h.init_address:04X} is in ROM or below $07E8 — invalid for RSID."
+            )
+        if h.psid_specific and h.init_address != 0:
+            # bit 1 set means C64 BASIC for RSID; requires init=0.
+            warns.append(
+                "C64 BASIC flag is set but init address is non-zero; RSID requires init=0 "
+                "when the BASIC bit is set."
             )
         if h.is_mus_data:
             warns.append("MUS data flag set; MUS is only valid for PSID.")
