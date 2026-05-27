@@ -55,12 +55,23 @@ def convert(h: SidHeader, target: str) -> SidHeader:
     return h
 
 
-def add_parser(sub: argparse._SubParsersAction) -> argparse.ArgumentParser:
-    p = sub.add_parser("convert", help="convert between PSID and RSID")
+_OPPOSITE = {"PSID": "RSID", "RSID": "PSID"}
+
+
+def _add_args(p: argparse.ArgumentParser) -> argparse.ArgumentParser:
     p.add_argument("input", type=Path)
     p.add_argument("-o", "--output", type=Path, required=True)
-    p.add_argument("--to", choices=("PSID", "RSID"), required=True)
+    p.add_argument(
+        "--to", choices=("PSID", "RSID"), default=None,
+        help="target format (default: opposite of the input's magic)",
+    )
     p.add_argument("--force", action="store_true")
+    return p
+
+
+def add_parser(sub: argparse._SubParsersAction) -> argparse.ArgumentParser:
+    p = sub.add_parser("convert", help="convert between PSID and RSID")
+    _add_args(p)
     p.set_defaults(func=run)
     return p
 
@@ -72,29 +83,31 @@ def run(args: argparse.Namespace) -> int:
         print(f"error: {e}", file=sys.stderr)
         return 1
 
-    if h.magic == args.to:
-        print(f"note: file is already {args.to}; rewriting bytes unchanged")
+    target = args.to or _OPPOSITE.get(h.magic)
+    if target is None:
+        print(f"error: cannot infer target from magic {h.magic!r}", file=sys.stderr)
+        return 1
+    if args.to is None:
+        print(f"note: inferred --to {target} (input is {h.magic})")
 
-    warns = warnings_for(h, args.to)
+    if h.magic == target:
+        print(f"note: file is already {target}; rewriting bytes unchanged")
+
+    warns = warnings_for(h, target)
     for w in warns:
         print(f"warning: {w}", file=sys.stderr)
     if warns and not args.force:
         print("refusing to convert; pass --force to override.", file=sys.stderr)
         return 2
 
-    h = convert(h, args.to)
+    h = convert(h, target)
     args.output.write_bytes(h.to_bytes())
-    print(f"wrote {args.output} as {args.to} v{h.version}")
+    print(f"wrote {args.output} as {target} v{h.version}")
     return 0
 
 
 def main(argv: list[str] | None = None) -> int:
-    p = argparse.ArgumentParser(description="Convert PSID <-> RSID")
-    p.add_argument("input", type=Path)
-    p.add_argument("-o", "--output", type=Path, required=True)
-    p.add_argument("--to", choices=("PSID", "RSID"), required=True)
-    p.add_argument("--force", action="store_true")
-    return run(p.parse_args(argv))
+    return run(_add_args(argparse.ArgumentParser(description="Convert PSID <-> RSID")).parse_args(argv))
 
 
 if __name__ == "__main__":

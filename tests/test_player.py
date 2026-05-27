@@ -1,6 +1,8 @@
 """6510 player byte-level checks (no emulator, just static analysis)."""
 from __future__ import annotations
 
+import pytest
+
 from sidconverter.player import (
     IMAGE_END,
     INIT_ADDR,
@@ -97,3 +99,16 @@ def test_durations_clamp_to_at_least_one():
     image = data[2:]
     dur_off = (TABLE_BASE - INIT_ADDR) + 6 * TABLE_STRIDE
     assert image[dur_off] == 1
+
+
+def test_branch_overflow_raises():
+    """If the play body ever outgrows 127 bytes, code generation must fail."""
+    import sidconverter.player as p
+    real = p.VOICE_REGS
+    # Multiply voices to make the body too long for an 8-bit branch.
+    p.VOICE_REGS = real * 4   # noqa: SLF001 (test-only)
+    try:
+        with pytest.raises(OverflowError, match="branch out of signed-byte range"):
+            p.make_play(waveform=p.WAVEFORMS["triangle"], num_notes=1)
+    finally:
+        p.VOICE_REGS = real

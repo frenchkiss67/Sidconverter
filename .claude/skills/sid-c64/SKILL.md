@@ -64,12 +64,12 @@ python3 scripts/sid_to_wav.py tune.sid -o tune.wav            # default song, 3 
 python3 scripts/sid_to_wav.py tune.sid -o tune.wav -t 120     # 120 seconds
 python3 scripts/sid_to_wav.py tune.sid -o tune.wav -s 2       # song #2
 python3 scripts/sid_to_wav.py tune.sid -o tune.mp3            # auto-pipes to ffmpeg
-python3 scripts/sid_to_wav.py tune.sid -o tune.wav -m n -f 44100  # force 8580, 44.1 kHz
+python3 scripts/sid_to_wav.py tune.sid -o tune.wav -m 8580 -f 44100 --no-filter
 ```
 
-Extra knobs (passed through to sidplayfp): `-f SR` sample rate, `-m {o,n}`
-SID model (o=6581, n=8580; append `f` to disable the filter), `-b POS`
-start position `[mins:]secs[.ms]`.
+Extra knobs (passed through to sidplayfp): `-f SR` sample rate,
+`-m {6581,8580}` SID model, `--no-filter` to disable filter emulation,
+`-b POS` start position `[mins:]secs[.ms]`.
 
 If `sidplayfp` is missing the script prints the apt/brew commands to install
 it (`sudo apt install sidplayfp` on Debian/Ubuntu, `brew install sidplayfp`
@@ -78,15 +78,18 @@ on macOS).
 ### Convert PSID ↔ RSID
 
 ```
-python3 scripts/sid_format_convert.py in.sid -o out.sid --to RSID
-python3 scripts/sid_format_convert.py in.sid -o out.sid --to PSID
+python3 scripts/sid_format_convert.py in.sid -o out.sid              # infer target
+python3 scripts/sid_format_convert.py in.sid -o out.sid --to RSID    # explicit
+python3 scripts/sid_format_convert.py in.sid -o out.sid --to PSID --force
 ```
 
-This rewrites the 4-byte magic and clears/sets the PSID-specific "samples"
-flag (bit 1). It does **not** rewrite the 6510 code — converting PSID code
-that depends on the kernal to RSID will not always produce a playable file.
-The script warns when the conversion is unlikely to be safe (e.g. PSID with
-`playAddress != 0` or non-zero `loadAddress` going to RSID).
+Without `--to`, the target defaults to the opposite of the input's magic.
+This rewrites the 4-byte magic and clears the PSID-specific "samples" flag
+(bit 1). It does **not** rewrite the 6510 code — converting PSID code that
+depends on the kernal to RSID will not always produce a playable file. The
+script warns when the conversion is unlikely to be safe (non-zero
+`playAddress`/`speed`, init in ROM, BASIC flag with non-zero init, etc.)
+and refuses to write unless `--force` is passed.
 
 ### Audio → SID (best effort)
 

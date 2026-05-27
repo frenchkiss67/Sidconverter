@@ -44,9 +44,9 @@ def _load_audio(path: Path) -> tuple[list[float], int]:
         pass
 
     if path.suffix.lower() != ".wav":
-        raise SystemExit(
-            f"error: librosa not installed and input is not WAV ({path.suffix}).\n"
-            "hint:  pip install librosa  (or convert your file to WAV first)"
+        raise ValueError(
+            f"librosa not installed and input is not WAV ({path.suffix}). "
+            "Install librosa (`pip install librosa`) or convert your file to WAV first."
         )
 
     with wave.open(str(path), "rb") as wf:
@@ -57,8 +57,8 @@ def _load_audio(path: Path) -> tuple[list[float], int]:
         raw = wf.readframes(n_frames)
 
     if sampwidth != 2:
-        raise SystemExit(
-            f"error: only 16-bit PCM WAV is supported by the fallback "
+        raise ValueError(
+            f"only 16-bit PCM WAV is supported by the fallback "
             f"(this file is {sampwidth*8}-bit). Install librosa for broader support."
         )
 
@@ -222,17 +222,17 @@ def _voice_columns(
 
 
 def _parse_adsr(s: str) -> tuple[int, int]:
-    """Parse 'A,D,S,R' (each 0..15) into (AD, SR) bytes."""
+    """Parse 'A,D,S,R' (each 0..15) into (AD, SR) bytes. Raises ValueError on bad input."""
     parts = [p.strip() for p in s.split(",")]
     if len(parts) != 4:
-        raise SystemExit(f"error: --adsr expects 4 comma-separated values, got {s!r}")
+        raise ValueError(f"ADSR expects 4 comma-separated values, got {s!r}")
     try:
         a, d, sus, r = (int(p, 0) for p in parts)
     except ValueError as e:
-        raise SystemExit(f"error: --adsr values must be integers: {e}") from None
+        raise ValueError(f"ADSR values must be integers: {e}") from None
     for label, v in (("attack", a), ("decay", d), ("sustain", sus), ("release", r)):
         if not 0 <= v <= 15:
-            raise SystemExit(f"error: --adsr {label}={v} out of range 0..15")
+            raise ValueError(f"ADSR {label}={v} out of range 0..15")
     return ((a << 4) | d, (sus << 4) | r)
 
 
@@ -264,25 +264,28 @@ def convert_audio(
     clock = clock.lower()
     model = model.lower()
     if clock not in CLOCK_FLAG:
-        raise SystemExit(f"error: clock must be pal or ntsc, got {clock!r}")
+        raise ValueError(f"clock must be pal or ntsc, got {clock!r}")
     if model not in MODEL_FLAG:
-        raise SystemExit(f"error: model must be 6581 or 8580, got {model!r}")
+        raise ValueError(f"model must be 6581 or 8580, got {model!r}")
     if voices not in (1, 3):
-        raise SystemExit(f"error: voices must be 1 or 3, got {voices}")
+        raise ValueError(f"voices must be 1 or 3, got {voices}")
     if waveform not in player_mod.WAVEFORMS:
-        raise SystemExit(f"error: waveform must be one of {sorted(player_mod.WAVEFORMS)}")
+        raise ValueError(f"waveform must be one of {sorted(player_mod.WAVEFORMS)}")
 
     ad_byte, sr_byte = _parse_adsr(adsr)
     waveform_byte = player_mod.WAVEFORMS[waveform]
 
+    if not input_path.is_file():
+        raise FileNotFoundError(input_path)
+
     samples, audio_sr = _load_audio(input_path)
     if not samples:
-        raise SystemExit("error: empty audio")
+        raise ValueError("empty audio")
 
     pitches = _detect_pitches(samples, audio_sr)
     notes = _quantise_midi(pitches, max_notes=min(255, max(1, max_notes)))
     if not notes:
-        raise SystemExit("error: no pitched content detected")
+        raise ValueError("no pitched content detected")
 
     cols = _voice_columns(notes, voices, clock)
     durations = [d for _, d in notes]
@@ -341,15 +344,19 @@ def add_parser(sub: argparse._SubParsersAction) -> argparse.ArgumentParser:
 
 
 def run(args: argparse.Namespace) -> int:
-    if not args.input.is_file():
-        print(f"error: input not found: {args.input}", file=sys.stderr)
+    try:
+        n, secs = convert_audio(
+            args.input, args.output,
+            name=args.name, author=args.author, released=args.released,
+            max_notes=args.max_notes, clock=args.clock, model=args.model,
+            voices=args.voices, waveform=args.waveform, adsr=args.adsr,
+        )
+    except FileNotFoundError as e:
+        print(f"error: input not found: {e}", file=sys.stderr)
         return 1
-    n, secs = convert_audio(
-        args.input, args.output,
-        name=args.name, author=args.author, released=args.released,
-        max_notes=args.max_notes, clock=args.clock, model=args.model,
-        voices=args.voices, waveform=args.waveform, adsr=args.adsr,
-    )
+    except ValueError as e:
+        print(f"error: {e}", file=sys.stderr)
+        return 1
     print(
         f"wrote {args.output}  ({n} notes, {secs:.1f}s, "
         f"{args.voices} voice(s), {args.waveform})"

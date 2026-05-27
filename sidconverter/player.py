@@ -142,14 +142,22 @@ def make_play(*, waveform: int, num_notes: int) -> bytes:
     done_pos = len(body)
     body += _rts()
 
-    # Patch BNE / BCC: relative offset = target - (operand_pos + 1)
-    bne_target = done_pos
-    bne_operand = bne_pos + 1
-    body[bne_operand] = (bne_target - (bne_operand + 1)) & 0xFF
+    # Patch BNE / BCC: relative offset = target - (operand_pos + 1).
+    # 6510 branch operands are *signed* bytes — if the body ever grows past
+    # 127 bytes from the branch, the silent `& 0xFF` would produce wrong
+    # code. Assert instead.
+    def _patch_branch(operand_pos: int, target_pos: int, mnemonic: str) -> None:
+        offset = target_pos - (operand_pos + 1)
+        if not -128 <= offset <= 127:
+            raise OverflowError(
+                f"{mnemonic} branch out of signed-byte range "
+                f"({offset:+d}); play routine has outgrown the 8-bit reach. "
+                "Refactor the player to use a JMP trampoline."
+            )
+        body[operand_pos] = offset & 0xFF
 
-    bcc_target = done_pos
-    bcc_operand = bcc_pos + 1
-    body[bcc_operand] = (bcc_target - (bcc_operand + 1)) & 0xFF
+    _patch_branch(bne_pos + 1, done_pos, "BNE")
+    _patch_branch(bcc_pos + 1, done_pos, "BCC")
 
     return bytes(body)
 

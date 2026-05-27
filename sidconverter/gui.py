@@ -66,6 +66,32 @@ def _enable_dnd(entry: tk.Entry) -> None:
         pass
 
 
+def _file_row(
+    parent: ttk.Frame,
+    row: int,
+    label: str,
+    *,
+    save: bool,
+    types: list[tuple[str, str]],
+    defaultext: str = "",
+    width: int = 60,
+) -> ttk.Entry:
+    """Add a 'label / entry / Browse...' row at `row`. Returns the Entry.
+
+    The entry also accepts drag-and-drop files when tkinterdnd2 is present.
+    """
+    ttk.Label(parent, text=label).grid(row=row, column=0, sticky="w", padx=4, pady=4)
+    entry = ttk.Entry(parent, width=width)
+    entry.grid(row=row, column=1, sticky="we", padx=4)
+    _enable_dnd(entry)
+    btn_text = "Save as..." if save else "Browse..."
+    ttk.Button(
+        parent, text=btn_text,
+        command=lambda: _browse(entry, save=save, types=types, defaultext=defaultext),
+    ).grid(row=row, column=2, padx=4)
+    return entry
+
+
 class App:
     def __init__(self, root: tk.Tk) -> None:
         self.root = root
@@ -136,14 +162,7 @@ class App:
     def _build_info_tab(self, nb: ttk.Notebook) -> None:
         f = ttk.Frame(nb)
         nb.add(f, text="Info")
-        ttk.Label(f, text="SID file:").grid(row=0, column=0, sticky="w", padx=4, pady=4)
-        self.info_path = ttk.Entry(f, width=60)
-        self.info_path.grid(row=0, column=1, sticky="we", padx=4)
-        _enable_dnd(self.info_path)
-        ttk.Button(
-            f, text="Browse...",
-            command=lambda: _browse(self.info_path, save=False, types=SID_FILETYPES),
-        ).grid(row=0, column=2, padx=4)
+        self.info_path = _file_row(f, 0, "SID file:", save=False, types=SID_FILETYPES)
         ttk.Button(f, text="Inspect", command=self._do_info).grid(
             row=1, column=1, sticky="w", padx=4, pady=4
         )
@@ -152,14 +171,7 @@ class App:
     def _build_validate_tab(self, nb: ttk.Notebook) -> None:
         f = ttk.Frame(nb)
         nb.add(f, text="Validate")
-        ttk.Label(f, text="SID file:").grid(row=0, column=0, sticky="w", padx=4, pady=4)
-        self.val_path = ttk.Entry(f, width=60)
-        self.val_path.grid(row=0, column=1, sticky="we", padx=4)
-        _enable_dnd(self.val_path)
-        ttk.Button(
-            f, text="Browse...",
-            command=lambda: _browse(self.val_path, save=False, types=SID_FILETYPES),
-        ).grid(row=0, column=2, padx=4)
+        self.val_path = _file_row(f, 0, "SID file:", save=False, types=SID_FILETYPES)
         self.val_strict = tk.BooleanVar(value=False)
         ttk.Checkbutton(
             f, text="Strict (treat warnings as failure)", variable=self.val_strict
@@ -213,27 +225,12 @@ class App:
     def _build_render_tab(self, nb: ttk.Notebook) -> None:
         f = ttk.Frame(nb)
         nb.add(f, text="Render to audio")
-        ttk.Label(f, text="Input .sid:").grid(row=0, column=0, sticky="w", padx=4, pady=4)
-        self.render_in = ttk.Entry(f, width=60)
-        self.render_in.grid(row=0, column=1, sticky="we", padx=4)
-        _enable_dnd(self.render_in)
-        ttk.Button(
-            f, text="Browse...",
-            command=lambda: _browse(self.render_in, save=False, types=SID_FILETYPES),
-        ).grid(row=0, column=2, padx=4)
-
-        ttk.Label(f, text="Output:").grid(row=1, column=0, sticky="w", padx=4, pady=4)
-        self.render_out = ttk.Entry(f, width=60)
-        self.render_out.grid(row=1, column=1, sticky="we", padx=4)
-        _enable_dnd(self.render_out)
-        ttk.Button(
-            f, text="Save as...",
-            command=lambda: _browse(
-                self.render_out, save=True,
-                types=[("WAV", "*.wav"), ("MP3", "*.mp3"), ("OGG", "*.ogg")],
-                defaultext=".wav",
-            ),
-        ).grid(row=1, column=2, padx=4)
+        self.render_in = _file_row(f, 0, "Input .sid:", save=False, types=SID_FILETYPES)
+        self.render_out = _file_row(
+            f, 1, "Output:", save=True,
+            types=[("WAV", "*.wav"), ("MP3", "*.mp3"), ("OGG", "*.ogg")],
+            defaultext=".wav",
+        )
 
         ttk.Label(f, text="Duration (s):").grid(row=2, column=0, sticky="w", padx=4)
         self.render_secs = ttk.Spinbox(f, from_=1, to=3600, width=8)
@@ -244,8 +241,20 @@ class App:
         self.render_song = ttk.Entry(f, width=8)
         self.render_song.grid(row=3, column=1, sticky="w", padx=4)
 
+        ttk.Label(f, text="SID model:").grid(row=4, column=0, sticky="w", padx=4)
+        self.render_model = tk.StringVar(value="auto")
+        ttk.Combobox(
+            f, textvariable=self.render_model, values=("auto", "6581", "8580"),
+            state="readonly", width=8,
+        ).grid(row=4, column=1, sticky="w", padx=4)
+
+        self.render_nofilter = tk.BooleanVar(value=False)
+        ttk.Checkbutton(
+            f, text="Disable filter emulation", variable=self.render_nofilter
+        ).grid(row=5, column=1, sticky="w", padx=4)
+
         ttk.Button(f, text="Render", command=self._do_render).grid(
-            row=4, column=1, sticky="w", padx=4, pady=8
+            row=6, column=1, sticky="w", padx=4, pady=8
         )
         f.columnconfigure(1, weight=1)
 
@@ -261,9 +270,15 @@ class App:
         seconds = int(self.render_secs.get() or 180)
         song_text = self.render_song.get().strip()
         song = int(song_text) if song_text else None
+        model = self.render_model.get()
+        model_arg: str | None = None if model == "auto" else model
+        no_filter = bool(self.render_nofilter.get())
 
         def go() -> None:
-            render.render(src, out, seconds=seconds, song=song)
+            render.render(
+                src, out, seconds=seconds, song=song,
+                model=model_arg, no_filter=no_filter,
+            )
             print(f"wrote {out}")
 
         self._run_async("render", go)
@@ -275,34 +290,20 @@ class App:
     def _build_convert_tab(self, nb: ttk.Notebook) -> None:
         f = ttk.Frame(nb)
         nb.add(f, text="Convert format")
-        ttk.Label(f, text="Input .sid:").grid(row=0, column=0, sticky="w", padx=4, pady=4)
-        self.conv_in = ttk.Entry(f, width=60)
-        self.conv_in.grid(row=0, column=1, sticky="we", padx=4)
-        _enable_dnd(self.conv_in)
-        ttk.Button(
-            f, text="Browse...",
-            command=lambda: _browse(self.conv_in, save=False, types=SID_FILETYPES),
-        ).grid(row=0, column=2, padx=4)
-
-        ttk.Label(f, text="Output .sid:").grid(row=1, column=0, sticky="w", padx=4, pady=4)
-        self.conv_out = ttk.Entry(f, width=60)
-        self.conv_out.grid(row=1, column=1, sticky="we", padx=4)
-        _enable_dnd(self.conv_out)
-        ttk.Button(
-            f, text="Save as...",
-            command=lambda: _browse(
-                self.conv_out, save=True, types=SID_FILETYPES, defaultext=".sid"
-            ),
-        ).grid(row=1, column=2, padx=4)
+        self.conv_in = _file_row(f, 0, "Input .sid:", save=False, types=SID_FILETYPES)
+        self.conv_out = _file_row(
+            f, 1, "Output .sid:", save=True, types=SID_FILETYPES, defaultext=".sid",
+        )
 
         ttk.Label(f, text="Target:").grid(row=2, column=0, sticky="w", padx=4)
-        self.conv_to = tk.StringVar(value="RSID")
-        ttk.Radiobutton(f, text="PSID", variable=self.conv_to, value="PSID").grid(
-            row=2, column=1, sticky="w", padx=4
-        )
-        ttk.Radiobutton(f, text="RSID", variable=self.conv_to, value="RSID").grid(
-            row=2, column=1, padx=64, sticky="w"
-        )
+        self.conv_to = tk.StringVar(value="auto")
+        target_frame = ttk.Frame(f)
+        target_frame.grid(row=2, column=1, sticky="w", padx=4)
+        for i, value in enumerate(("auto (opposite of input)", "PSID", "RSID")):
+            val = "auto" if value.startswith("auto") else value
+            ttk.Radiobutton(
+                target_frame, text=value, variable=self.conv_to, value=val
+            ).grid(row=0, column=i, padx=(0, 12))
 
         self.conv_force = tk.BooleanVar(value=False)
         ttk.Checkbutton(
@@ -323,11 +324,14 @@ class App:
         if not out.name:
             messagebox.showerror("Convert", "Pick an output file.")
             return
-        target = self.conv_to.get()
+        target_choice = self.conv_to.get()
         force = self.conv_force.get()
 
         def go() -> None:
             h = SidHeader.parse(src.read_bytes())
+            target = format_convert._OPPOSITE[h.magic] if target_choice == "auto" else target_choice
+            if target_choice == "auto":
+                print(f"note: inferred target {target} (input is {h.magic})")
             warns = format_convert.warnings_for(h, target)
             for w in warns:
                 print(f"warning: {w}", file=sys.stderr)
@@ -347,25 +351,10 @@ class App:
     def _build_audio_tab(self, nb: ttk.Notebook) -> None:
         f = ttk.Frame(nb)
         nb.add(f, text="Audio -> SID")
-        ttk.Label(f, text="Input audio:").grid(row=0, column=0, sticky="w", padx=4, pady=4)
-        self.a2s_in = ttk.Entry(f, width=60)
-        self.a2s_in.grid(row=0, column=1, sticky="we", padx=4)
-        _enable_dnd(self.a2s_in)
-        ttk.Button(
-            f, text="Browse...",
-            command=lambda: _browse(self.a2s_in, save=False, types=AUDIO_FILETYPES),
-        ).grid(row=0, column=2, padx=4)
-
-        ttk.Label(f, text="Output .sid:").grid(row=1, column=0, sticky="w", padx=4, pady=4)
-        self.a2s_out = ttk.Entry(f, width=60)
-        self.a2s_out.grid(row=1, column=1, sticky="we", padx=4)
-        _enable_dnd(self.a2s_out)
-        ttk.Button(
-            f, text="Save as...",
-            command=lambda: _browse(
-                self.a2s_out, save=True, types=SID_FILETYPES, defaultext=".sid"
-            ),
-        ).grid(row=1, column=2, padx=4)
+        self.a2s_in = _file_row(f, 0, "Input audio:", save=False, types=AUDIO_FILETYPES)
+        self.a2s_out = _file_row(
+            f, 1, "Output .sid:", save=True, types=SID_FILETYPES, defaultext=".sid",
+        )
 
         for i, (label, attr, default) in enumerate(
             [("Name", "a2s_name", "Untitled"),

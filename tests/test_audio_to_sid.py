@@ -51,8 +51,30 @@ def test_parse_adsr_valid():
 
 @pytest.mark.parametrize("bad", ["1,2,3", "1,2,3,4,5", "a,b,c,d", "1,2,16,3"])
 def test_parse_adsr_rejects_bad(bad):
-    with pytest.raises(SystemExit):
+    with pytest.raises(ValueError):
         _parse_adsr(bad)
+
+
+def test_convert_audio_raises_value_error_for_bad_clock(tmp_path):
+    wav = tmp_path / "tone.wav"
+    sid = tmp_path / "tone.sid"
+    _write_tone(wav, 440.0, 0.2)
+    with pytest.raises(ValueError, match="clock"):
+        convert_audio(wav, sid, clock="amiga")
+
+
+def test_convert_audio_raises_value_error_for_bad_waveform(tmp_path):
+    wav = tmp_path / "tone.wav"
+    sid = tmp_path / "tone.sid"
+    _write_tone(wav, 440.0, 0.2)
+    with pytest.raises(ValueError, match="waveform"):
+        convert_audio(wav, sid, waveform="square")
+
+
+def test_convert_audio_missing_file_raises_filenotfound(tmp_path):
+    sid = tmp_path / "out.sid"
+    with pytest.raises(FileNotFoundError):
+        convert_audio(tmp_path / "nope.wav", sid)
 
 
 def test_convert_audio_produces_parseable_sid(tmp_path):

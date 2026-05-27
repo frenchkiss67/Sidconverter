@@ -28,6 +28,18 @@ def _hint(tool: str) -> str:
     return INSTALL_HINTS[tool].get(key, f"install {tool} from your package manager")
 
 
+# Translate friendly model names to sidplayfp's -m{o,n} flag, with optional
+# 'f' suffix to disable the filter emulation.
+_MODEL_TO_SIDPLAY = {"6581": "o", "8580": "n"}
+
+
+def _sidplay_model_flag(model: str | None, no_filter: bool) -> str | None:
+    if model is None:
+        return None
+    code = _MODEL_TO_SIDPLAY[model]
+    return code + ("f" if no_filter else "")
+
+
 def render_with_sidplayfp(
     src: Path,
     wav_out: Path,
@@ -36,6 +48,7 @@ def render_with_sidplayfp(
     *,
     sample_rate: int | None = None,
     model: str | None = None,
+    no_filter: bool = False,
     start: str | None = None,
 ) -> None:
     cmd = ["sidplayfp", f"-w{wav_out}", f"-t{seconds}"]
@@ -43,8 +56,9 @@ def render_with_sidplayfp(
         cmd.append(f"-o{song}")
     if sample_rate is not None:
         cmd.append(f"-f{sample_rate}")
-    if model:
-        cmd.append(f"-m{model}")
+    flag = _sidplay_model_flag(model, no_filter)
+    if flag:
+        cmd.append(f"-m{flag}")
     if start is not None:
         cmd.append(f"-b{start}")
     cmd.append(str(src))
@@ -63,13 +77,16 @@ def render(
     *,
     sample_rate: int | None = None,
     model: str | None = None,
+    no_filter: bool = False,
     start: str | None = None,
 ) -> None:
     """Render src to out. Raises RuntimeError on tool failure, SystemExit on missing tools."""
     if shutil.which("sidplayfp") is None:
         raise SystemExit(f"error: sidplayfp not found on PATH\nhint:  {_hint('sidplayfp')}")
+    if model is not None and model not in _MODEL_TO_SIDPLAY:
+        raise ValueError(f"model must be one of {sorted(_MODEL_TO_SIDPLAY)}, got {model!r}")
 
-    kwargs = dict(sample_rate=sample_rate, model=model, start=start)
+    kwargs = dict(sample_rate=sample_rate, model=model, no_filter=no_filter, start=start)
     want_wav = out.suffix.lower() == ".wav"
     if want_wav:
         render_with_sidplayfp(src, out, seconds, song, **kwargs)
@@ -96,12 +113,16 @@ def render(
 def _add_args(p: argparse.ArgumentParser) -> argparse.ArgumentParser:
     p.add_argument("input", type=Path)
     p.add_argument("-o", "--output", type=Path, required=True)
-    p.add_argument("-t", "--seconds", type=int, default=180)
-    p.add_argument("-s", "--song", type=int, default=None)
+    p.add_argument("-t", "--seconds", type=int, default=180,
+                   help="duration in seconds (default 180, pass 0 for endless)")
+    p.add_argument("-s", "--song", type=int, default=None,
+                   help="subtune number (1-based)")
     p.add_argument("-f", "--sample-rate", type=int, default=None,
                    help="output sample rate in Hz (sidplayfp default: 48000)")
-    p.add_argument("-m", "--model", choices=("o", "n", "of", "nf"), default=None,
-                   help="force SID model: 'o'=6581, 'n'=8580, suffix 'f' = no filter")
+    p.add_argument("-m", "--model", choices=("6581", "8580"), default=None,
+                   help="force SID chip model")
+    p.add_argument("--no-filter", action="store_true",
+                   help="disable filter emulation (sidplayfp -m<x>f)")
     p.add_argument("-b", "--start", default=None,
                    help="skip to this position, format [mins:]secs[.ms]")
     return p
@@ -121,11 +142,15 @@ def run(args: argparse.Namespace) -> int:
     try:
         render(
             args.input, args.output, args.seconds, args.song,
-            sample_rate=args.sample_rate, model=args.model, start=args.start,
+            sample_rate=args.sample_rate, model=args.model,
+            no_filter=args.no_filter, start=args.start,
         )
     except RuntimeError as e:
         print(f"error: {e}", file=sys.stderr)
         return 3
+    except ValueError as e:
+        print(f"error: {e}", file=sys.stderr)
+        return 1
     print(f"wrote {args.output}")
     return 0
 

@@ -99,3 +99,32 @@ def test_from_audio_help_lists_new_flags():
     assert r.returncode == 0
     for opt in ("--voices", "--waveform", "--adsr", "--clock", "--model"):
         assert opt in r.stdout
+
+
+def test_render_model_uses_friendly_names():
+    r = _run("render", "--help")
+    # Old cryptic spelling gone, friendly names + --no-filter present
+    assert "{6581,8580}" in r.stdout or "6581" in r.stdout
+    assert "--no-filter" in r.stdout
+    assert "{o,n,of,nf}" not in r.stdout
+
+
+def test_convert_infers_target_from_input(tmp_path):
+    wav = tmp_path / "tone.wav"
+    sid = tmp_path / "tone.sid"
+    _write_tone(wav, 440.0, 0.3)
+    _run("from-audio", str(wav), "-o", str(sid))
+
+    out = tmp_path / "auto.sid"
+    # PSID input + no --to + --force should default to RSID
+    r = _run("convert", str(sid), "-o", str(out), "--force")
+    assert r.returncode == 0
+    assert "inferred --to RSID" in r.stdout
+    assert out.read_bytes()[:4] == b"RSID"
+
+    # RSID input + no --to should default to PSID
+    out2 = tmp_path / "back.sid"
+    r = _run("convert", str(out), "-o", str(out2))
+    assert r.returncode == 0
+    assert "inferred --to PSID" in r.stdout
+    assert out2.read_bytes()[:4] == b"PSID"
