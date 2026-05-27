@@ -1,0 +1,43 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sidconverter"
+version = "0.1.0"
+description = "Commodore 64 SID file toolkit: inspect, render, convert and synthesize PSID/RSID files."
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "MIT" }
+authors = [{ name = "frenchkiss67" }]
+keywords = ["sid", "commodore", "c64", "psid", "rsid", "chiptune", "music"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: Console",
+    "Environment :: X11 Applications",
+    "Intended Audience :: End Users/Desktop",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Multimedia :: Sound/Audio :: Conversion",
+]
+
+# Core has zero runtime deps (stdlib only).
+# librosa is optional and only used by `from-audio` for non-WAV inputs.
+dependencies = []
+
+[project.optional-dependencies]
+audio = ["librosa>=0.10", "numpy>=1.23"]
+build = ["pyinstaller>=6"]
+
+[project.scripts]
+sidconverter = "sidconverter.cli:main"
+
+[project.gui-scripts]
+sidconverter-gui = "sidconverter.gui:main"
+
+[tool.setuptools.packages.find]
+include = ["sidconverter*"]
