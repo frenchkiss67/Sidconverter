@@ -50,8 +50,16 @@ def to_dict(h: SidHeader, path: Path, raw: bytes | None = None) -> dict:
 
 def format_pretty(d: dict) -> str:
     f = d["flags"]
+    extra = []
+    if f["mus_data"]:
+        extra.append("Compute! MUS data — needs an external MUS player")
+    if d["magic"] == "PSID" and f["psid_specific"]:
+        extra.append("uses PSID-specific PlaySID samples")
+    if d["magic"] == "RSID" and f["psid_specific"]:
+        extra.append("C64 BASIC executable (init must be 0)")
     lines = [
         f"{d['magic']} v{d['version']}  ({d['data_size']} bytes of 6510 code)",
+        *[f"  ! {x}" for x in extra],
         f"  file:       {d['path']}",
         f"  name:       {d['name']!r}",
         f"  author:     {d['author']!r}",

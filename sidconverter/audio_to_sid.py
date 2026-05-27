@@ -152,20 +152,18 @@ def _midi_to_sid_reg(midi: int, clock: str) -> int:
     return max(0, min(0xFFFF, val))
 
 
-def _quantise(pitches: list[float], clock: str, max_notes: int = 255) -> list[tuple[int, int]]:
-    notes: list[tuple[int, int]] = []
-    cur_midi: int | None = -1
+def _quantise_midi(pitches: list[float], max_notes: int = 255) -> list[tuple[int | None, int]]:
+    """Group consecutive same-MIDI frames. Returns (midi_or_None, duration_frames)."""
+    notes: list[tuple[int | None, int]] = []
+    cur_midi: int | None | object = object()
     cur_len = 0
 
-    def flush():
-        nonlocal cur_midi, cur_len
-        if cur_len == 0:
-            return
-        if cur_midi is None:
-            notes.append((0, min(cur_len, 255)))
-        else:
-            notes.append((_midi_to_sid_reg(cur_midi, clock), min(cur_len, 255)))
-        cur_len = 0
+    def flush() -> None:
+        nonlocal cur_len
+        if cur_len > 0:
+            notes.append((cur_midi if isinstance(cur_midi, (int, type(None))) else None,
+                          min(cur_len, 255)))
+            cur_len = 0
 
     for hz in pitches:
         midi = _hz_to_midi(hz)
@@ -175,15 +173,16 @@ def _quantise(pitches: list[float], clock: str, max_notes: int = 255) -> list[tu
         cur_len += 1
     flush()
 
-    while notes and notes[0][0] == 0:
+    # Drop leading silence, merge 1-frame glitches into the previous note.
+    while notes and notes[0][0] is None:
         notes.pop(0)
-    cleaned: list[tuple[int, int]] = []
-    for freq, dur in notes:
+    cleaned: list[tuple[int | None, int]] = []
+    for midi, dur in notes:
         if dur <= 1 and cleaned:
-            prev_freq, prev_dur = cleaned[-1]
-            cleaned[-1] = (prev_freq, min(prev_dur + dur, 255))
+            pm, pd = cleaned[-1]
+            cleaned[-1] = (pm, min(pd + dur, 255))
         else:
-            cleaned.append((freq, dur))
+            cleaned.append((midi, dur))
 
     if len(cleaned) > max_notes:
         print(
@@ -195,80 +194,46 @@ def _quantise(pitches: list[float], clock: str, max_notes: int = 255) -> list[tu
     return cleaned
 
 
-# ---------------------------------------------------------------------------
-# 6510 player — layout documented in the SKILL.md
-# ---------------------------------------------------------------------------
+def _voice_columns(
+    notes_midi: list[tuple[int | None, int]],
+    voices: int,
+    clock: str,
+) -> list[list[int]]:
+    """Build (3 voice × N step) frequency register tables.
 
-INIT_CODE = bytes([
-    0xA9, 0x00,             # LDA #$00
-    0xA2, 0x18,             # LDX #$18
-    0x9D, 0x00, 0xD4,       # STA $D400,X
-    0xCA,                   # DEX
-    0x10, 0xFA,             # BPL clr_loop
-    0xA9, 0x0F,             # LDA #$0F
-    0x8D, 0x18, 0xD4,       # STA $D418
-    0xA9, 0xF0,             # LDA #$F0
-    0x8D, 0x06, 0xD4,       # STA $D406
-    0xA9, 0x01,             # LDA #$01
-    0x85, 0xFB,             # STA $FB
-    0xA9, 0x00,             # LDA #$00
-    0x85, 0xFC,             # STA $FC
-    0x60,                   # RTS
-])
-assert len(INIT_CODE) == 29
+    voices=1: voice 1 = melody, voices 2/3 silent.
+    voices=3: voice 1 = melody, voice 2 = octave below, voice 3 = perfect fifth above.
+    """
+    melody = [m for m, _ in notes_midi]
+    cols: list[list[int]] = [[], [], []]
 
-INIT_ADDR = 0x1000
-PLAY_ADDR = INIT_ADDR + len(INIT_CODE)
-TABLE_FREQ_LO = 0x1100
-TABLE_FREQ_HI = 0x1200
-TABLE_DUR     = 0x1300
-TABLE_END     = 0x1400
+    if voices == 1:
+        offsets = (0, None, None)      # only voice 1 plays
+    else:
+        offsets = (0, -12, 7)          # melody, octave-down bass, fifth-up sweetener
+
+    for midi in melody:
+        for v, off in enumerate(offsets):
+            if midi is None or off is None:
+                cols[v].append(0)
+            else:
+                cols[v].append(_midi_to_sid_reg(midi + off, clock))
+    return cols
 
 
-def _build_play(num_notes: int) -> bytes:
-    code = bytearray([
-        0xC6, 0xFB,                                 # DEC $FB
-        0xD0, 0x29,                                 # BNE done
-        0xA6, 0xFC,                                 # LDX $FC
-        0xBD, 0x00, TABLE_DUR & 0xFF,               # LDA $1300,X
-        0x85, 0xFB,                                 # STA $FB
-        0xBD, 0x00, TABLE_FREQ_LO & 0xFF,           # LDA $1100,X
-        0x8D, 0x00, 0xD4,                           # STA $D400
-        0xBD, 0x00, TABLE_FREQ_HI & 0xFF,           # LDA $1200,X
-        0x8D, 0x01, 0xD4,                           # STA $D401
-        0xA9, 0x10,                                 # LDA #$10
-        0x8D, 0x04, 0xD4,                           # STA $D404
-        0xA9, 0x11,                                 # LDA #$11
-        0x8D, 0x04, 0xD4,                           # STA $D404
-        0xE6, 0xFC,                                 # INC $FC
-        0xA5, 0xFC,                                 # LDA $FC
-        0xC9, num_notes & 0xFF,                     # CMP #n
-        0x90, 0x04,                                 # BCC done
-        0xA9, 0x00,                                 # LDA #$00
-        0x85, 0xFC,                                 # STA $FC
-        0x60,                                       # RTS
-    ])
-    code[8]  = (TABLE_DUR >> 8) & 0xFF
-    code[13] = (TABLE_FREQ_LO >> 8) & 0xFF
-    code[19] = (TABLE_FREQ_HI >> 8) & 0xFF
-    assert len(code) == 46
-    return bytes(code)
-
-
-def _build_payload(notes: list[tuple[int, int]]) -> bytes:
-    play_code = _build_play(len(notes))
-
-    image = bytearray(TABLE_END - INIT_ADDR)
-    image[0 : len(INIT_CODE)] = INIT_CODE
-    off_play = PLAY_ADDR - INIT_ADDR
-    image[off_play : off_play + len(play_code)] = play_code
-
-    for i, (freq, dur) in enumerate(notes):
-        image[(TABLE_FREQ_LO - INIT_ADDR) + i] = freq & 0xFF
-        image[(TABLE_FREQ_HI - INIT_ADDR) + i] = (freq >> 8) & 0xFF
-        image[(TABLE_DUR     - INIT_ADDR) + i] = max(1, dur & 0xFF)
-
-    return struct.pack("<H", INIT_ADDR) + bytes(image)
+def _parse_adsr(s: str) -> tuple[int, int]:
+    """Parse 'A,D,S,R' (each 0..15) into (AD, SR) bytes."""
+    parts = [p.strip() for p in s.split(",")]
+    if len(parts) != 4:
+        raise SystemExit(f"error: --adsr expects 4 comma-separated values, got {s!r}")
+    try:
+        a, d, sus, r = (int(p, 0) for p in parts)
+    except ValueError as e:
+        raise SystemExit(f"error: --adsr values must be integers: {e}") from None
+    for label, v in (("attack", a), ("decay", d), ("sustain", sus), ("release", r)):
+        if not 0 <= v <= 15:
+            raise SystemExit(f"error: --adsr {label}={v} out of range 0..15")
+    return ((a << 4) | d, (sus << 4) | r)
 
 
 # ---------------------------------------------------------------------------
@@ -286,36 +251,54 @@ def convert_audio(
     max_notes: int = 255,
     clock: str = "pal",
     model: str = "6581",
+    voices: int = 1,
+    waveform: str = "triangle",
+    adsr: str = "0,0,15,0",
 ) -> tuple[int, float]:
     """Convert input audio to a PSID file at output_path.
 
     Returns (n_notes, duration_seconds). Raises SystemExit on hard errors.
     """
+    from . import player as player_mod
+
     clock = clock.lower()
     model = model.lower()
     if clock not in CLOCK_FLAG:
         raise SystemExit(f"error: clock must be pal or ntsc, got {clock!r}")
     if model not in MODEL_FLAG:
         raise SystemExit(f"error: model must be 6581 or 8580, got {model!r}")
+    if voices not in (1, 3):
+        raise SystemExit(f"error: voices must be 1 or 3, got {voices}")
+    if waveform not in player_mod.WAVEFORMS:
+        raise SystemExit(f"error: waveform must be one of {sorted(player_mod.WAVEFORMS)}")
 
-    samples, sr = _load_audio(input_path)
+    ad_byte, sr_byte = _parse_adsr(adsr)
+    waveform_byte = player_mod.WAVEFORMS[waveform]
+
+    samples, audio_sr = _load_audio(input_path)
     if not samples:
         raise SystemExit("error: empty audio")
 
-    pitches = _detect_pitches(samples, sr)
-    notes = _quantise(pitches, clock, max_notes=min(255, max(1, max_notes)))
+    pitches = _detect_pitches(samples, audio_sr)
+    notes = _quantise_midi(pitches, max_notes=min(255, max(1, max_notes)))
     if not notes:
         raise SystemExit("error: no pitched content detected")
 
-    data = _build_payload(notes)
+    cols = _voice_columns(notes, voices, clock)
+    durations = [d for _, d in notes]
+
+    data, play_addr = player_mod.build_payload(
+        cols, durations,
+        waveform=waveform_byte, ad=ad_byte, sr=sr_byte,
+    )
     flags = CLOCK_FLAG[clock] | MODEL_FLAG[model]
     h = SidHeader(
         magic="PSID",
         version=2,
         data_offset=0x7C,
         load_address=0,
-        init_address=INIT_ADDR,
-        play_address=PLAY_ADDR,
+        init_address=player_mod.INIT_ADDR,
+        play_address=play_addr,
         songs=1,
         start_song=1,
         speed=0,
@@ -327,7 +310,7 @@ def convert_audio(
     )
     output_path.write_bytes(h.to_bytes())
     frame_rate = FRAME_RATE_HZ_PAL if clock == "pal" else FRAME_RATE_HZ_NTSC
-    return len(notes), sum(d for _, d in notes) / frame_rate
+    return len(notes), sum(durations) / frame_rate
 
 
 def _add_args(p: argparse.ArgumentParser) -> argparse.ArgumentParser:
@@ -341,6 +324,12 @@ def _add_args(p: argparse.ArgumentParser) -> argparse.ArgumentParser:
                    help="C64 system clock used for SID frequency tuning")
     p.add_argument("--model", choices=("6581", "8580"), default="6581",
                    help="declare SID model in PSID flags")
+    p.add_argument("--voices", type=int, choices=(1, 3), default=3,
+                   help="1=monophonic; 3=melody + octave-below bass + fifth-above harmony")
+    p.add_argument("--waveform", choices=("triangle", "sawtooth", "pulse", "noise"),
+                   default="triangle")
+    p.add_argument("--adsr", default="0,0,15,0",
+                   help="ADSR envelope as 'A,D,S,R' values 0..15 (default sustained note)")
     return p
 
 
@@ -359,8 +348,12 @@ def run(args: argparse.Namespace) -> int:
         args.input, args.output,
         name=args.name, author=args.author, released=args.released,
         max_notes=args.max_notes, clock=args.clock, model=args.model,
+        voices=args.voices, waveform=args.waveform, adsr=args.adsr,
     )
-    print(f"wrote {args.output}  ({n} notes, {secs:.1f}s of music)")
+    print(
+        f"wrote {args.output}  ({n} notes, {secs:.1f}s, "
+        f"{args.voices} voice(s), {args.waveform})"
+    )
     return 0
 
 

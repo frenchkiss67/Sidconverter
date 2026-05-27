@@ -93,17 +93,38 @@ The script warns when the conversion is unlikely to be safe (e.g. PSID with
 ```
 python3 scripts/audio_to_sid.py input.wav -o melody.sid \
     --name "My Tune" --author "Me" --released "2026"
+
+# Tweak voicing, timbre, envelope and target clock:
+python3 scripts/audio_to_sid.py input.wav -o melody.sid \
+    --voices 3 --waveform sawtooth --adsr 4,8,12,6 --clock ntsc --model 8580
 ```
 
-This does monophonic pitch detection on the audio (via `librosa` if
-available, otherwise an autocorrelation fallback on the standard library)
-and emits a PSID v2 file containing a small embedded 6510 player that steps
-through the detected notes on SID voice 1 (triangle waveform, 50 Hz frame
-rate).
+Pitch detection runs on the audio (via `librosa.pyin` when available, else
+an autocorrelation fallback on the stdlib). The script emits a PSID v2 file
+with an embedded 6510 player that steps three SID voices in lockstep:
 
-The result is intentionally simple — a recognisable monophonic melody, not a
-full chiptune arrangement. The skill should be honest about this when
+- `--voices 1` — only voice 1 plays the detected melody.
+- `--voices 3` (default) — voice 1 plays the melody, voice 2 plays it one
+  octave below (bass), voice 3 plays it a perfect fifth above (sweetener).
+
+Other knobs: `--waveform {triangle,sawtooth,pulse,noise}`, `--adsr A,D,S,R`
+(each value 0..15), `--clock {pal,ntsc}`, `--model {6581,8580}`.
+
+The result is still a single-pitch transcription — full polyphonic
+transcription would need a much heavier model. Be honest about this when
 presenting the output to the user.
+
+### Validate against the format spec
+
+```
+python3 scripts/sid_validate.py path/to/tune.sid           # exit 0/2
+python3 scripts/sid_validate.py path/to/tune.sid --strict  # warnings -> exit 1
+```
+
+Reports spec violations as errors (version range, songs/startSong range,
+RSID rules, secondary/third SID address validity) and style/portability
+issues as warnings (empty name/author, MUS data flag, v1 header with v2
+fields populated).
 
 ## Decision guide
 
@@ -111,7 +132,9 @@ presenting the output to the user.
 - User asks to play, listen, render, export, convert to wav/mp3/ogg → `sid_to_wav.py`.
 - User wants to flip the magic between PSID and RSID → `sid_format_convert.py`.
 - User wants to turn a hummed melody / wav / mp3 into a .sid → `audio_to_sid.py`,
-  and warn that the result is a single-voice approximation.
+  default to `--voices 3` for fuller sound; warn that pitch detection is monophonic.
+- User asks "is this .sid valid?" / wants to lint a tune before publishing →
+  `sid_validate.py`.
 - User asks about a SID hash for HVSC Songlengths.md5 → `sid_info.py` prints
   both MD5 variants used by libsidplayfp: `md5 (old)` for legacy entries
   (createMD5: data + init/play/songs little-endian + per-song speed byte +

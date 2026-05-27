@@ -12,7 +12,7 @@ from __future__ import annotations
 import argparse
 import sys
 
-from . import __version__, audio_to_sid, format_convert, info, render
+from . import __version__, audio_to_sid, format_convert, info, render, validate
 
 
 def _gui_subparser(sub: argparse._SubParsersAction) -> argparse.ArgumentParser:
@@ -34,6 +34,7 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--version", action="version", version=f"sidconverter {__version__}")
     sub = p.add_subparsers(dest="cmd", required=True)
     info.add_parser(sub)
+    validate.add_parser(sub)
     render.add_parser(sub)
     format_convert.add_parser(sub)
     audio_to_sid.add_parser(sub)

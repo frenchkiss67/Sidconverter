@@ -31,7 +31,9 @@ dependencies = []
 
 [project.optional-dependencies]
 audio = ["librosa>=0.10", "numpy>=1.23"]
+gui   = ["tkinterdnd2>=0.4"]
 build = ["pyinstaller>=6"]
+test  = ["pytest>=7"]
 
 [project.scripts]
 sidconverter = "sidconverter.cli:main"

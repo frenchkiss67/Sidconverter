@@ -1,8 +1,11 @@
 """Tkinter GUI for sidconverter.
 
-Four tabs map to the four operations: Info, Render, Convert, Audio -> SID.
+Five tabs map to the operations: Info, Validate, Render, Convert, Audio -> SID.
 Long-running operations run in a background thread so the UI stays
 responsive; status text and errors land in a shared log pane.
+
+Drag-and-drop is enabled when the optional `tkinterdnd2` package is
+installed; otherwise the GUI falls back to plain Tk file dialogs.
 """
 from __future__ import annotations
 
@@ -19,8 +22,14 @@ from typing import Callable
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 
-from . import audio_to_sid, format_convert, info, render
+from . import audio_to_sid, format_convert, info, render, validate
 from .header import SidHeader
+
+try:
+    from tkinterdnd2 import DND_FILES, TkinterDnD  # type: ignore
+    _DND_AVAILABLE = True
+except ImportError:
+    _DND_AVAILABLE = False
 
 
 SID_FILETYPES = [("SID files", "*.sid"), ("All files", "*.*")]
@@ -39,6 +48,24 @@ def _browse(entry: tk.Entry, *, save: bool, types, defaultext: str = "") -> None
         entry.insert(0, fn)
 
 
+def _enable_dnd(entry: tk.Entry) -> None:
+    """Register an Entry as a drop target if tkinterdnd2 is installed."""
+    if not _DND_AVAILABLE:
+        return
+    try:
+        entry.drop_target_register(DND_FILES)  # type: ignore[attr-defined]
+
+        def on_drop(event: object) -> None:
+            path = getattr(event, "data", "").strip().strip("{}")
+            if path:
+                entry.delete(0, tk.END)
+                entry.insert(0, path)
+
+        entry.dnd_bind("<<Drop>>", on_drop)  # type: ignore[attr-defined]
+    except (tk.TclError, AttributeError):
+        pass
+
+
 class App:
     def __init__(self, root: tk.Tk) -> None:
         self.root = root
@@ -48,9 +75,17 @@ class App:
         nb = ttk.Notebook(root)
         nb.pack(fill="both", expand=True, padx=8, pady=8)
         self._build_info_tab(nb)
+        self._build_validate_tab(nb)
         self._build_render_tab(nb)
         self._build_convert_tab(nb)
         self._build_audio_tab(nb)
+
+        if not _DND_AVAILABLE:
+            ttk.Label(
+                root,
+                text="Tip: `pip install tkinterdnd2` to drag .sid / audio files into the entries.",
+                foreground="gray40",
+            ).pack(fill="x", padx=8, pady=(0, 4))
 
         # Log pane
         log_frame = ttk.LabelFrame(root, text="Log")
@@ -104,6 +139,7 @@ class App:
         ttk.Label(f, text="SID file:").grid(row=0, column=0, sticky="w", padx=4, pady=4)
         self.info_path = ttk.Entry(f, width=60)
         self.info_path.grid(row=0, column=1, sticky="we", padx=4)
+        _enable_dnd(self.info_path)
         ttk.Button(
             f, text="Browse...",
             command=lambda: _browse(self.info_path, save=False, types=SID_FILETYPES),
@@ -112,6 +148,48 @@ class App:
             row=1, column=1, sticky="w", padx=4, pady=4
         )
         f.columnconfigure(1, weight=1)
+
+    def _build_validate_tab(self, nb: ttk.Notebook) -> None:
+        f = ttk.Frame(nb)
+        nb.add(f, text="Validate")
+        ttk.Label(f, text="SID file:").grid(row=0, column=0, sticky="w", padx=4, pady=4)
+        self.val_path = ttk.Entry(f, width=60)
+        self.val_path.grid(row=0, column=1, sticky="we", padx=4)
+        _enable_dnd(self.val_path)
+        ttk.Button(
+            f, text="Browse...",
+            command=lambda: _browse(self.val_path, save=False, types=SID_FILETYPES),
+        ).grid(row=0, column=2, padx=4)
+        self.val_strict = tk.BooleanVar(value=False)
+        ttk.Checkbutton(
+            f, text="Strict (treat warnings as failure)", variable=self.val_strict
+        ).grid(row=1, column=1, sticky="w", padx=4)
+        ttk.Button(f, text="Validate", command=self._do_validate).grid(
+            row=2, column=1, sticky="w", padx=4, pady=4
+        )
+        f.columnconfigure(1, weight=1)
+
+    def _do_validate(self) -> None:
+        path = Path(self.val_path.get())
+        if not path.is_file():
+            messagebox.showerror("Validate", f"File not found: {path}")
+            return
+        strict = self.val_strict.get()
+
+        def go() -> None:
+            h = SidHeader.parse(path.read_bytes())
+            errors, warns = validate.lint(h)
+            for w in warns:
+                print(f"warning: {w}")
+            for e in errors:
+                print(f"error: {e}")
+            if errors:
+                raise SystemExit(2)
+            if warns and strict:
+                raise SystemExit(1)
+            print(f"OK  {h.magic} v{h.version}, name={h.name!r}")
+
+        self._run_async("validate", go)
 
     def _do_info(self) -> None:
         path = Path(self.info_path.get())
@@ -138,6 +216,7 @@ class App:
         ttk.Label(f, text="Input .sid:").grid(row=0, column=0, sticky="w", padx=4, pady=4)
         self.render_in = ttk.Entry(f, width=60)
         self.render_in.grid(row=0, column=1, sticky="we", padx=4)
+        _enable_dnd(self.render_in)
         ttk.Button(
             f, text="Browse...",
             command=lambda: _browse(self.render_in, save=False, types=SID_FILETYPES),
@@ -146,6 +225,7 @@ class App:
         ttk.Label(f, text="Output:").grid(row=1, column=0, sticky="w", padx=4, pady=4)
         self.render_out = ttk.Entry(f, width=60)
         self.render_out.grid(row=1, column=1, sticky="we", padx=4)
+        _enable_dnd(self.render_out)
         ttk.Button(
             f, text="Save as...",
             command=lambda: _browse(
@@ -198,6 +278,7 @@ class App:
         ttk.Label(f, text="Input .sid:").grid(row=0, column=0, sticky="w", padx=4, pady=4)
         self.conv_in = ttk.Entry(f, width=60)
         self.conv_in.grid(row=0, column=1, sticky="we", padx=4)
+        _enable_dnd(self.conv_in)
         ttk.Button(
             f, text="Browse...",
             command=lambda: _browse(self.conv_in, save=False, types=SID_FILETYPES),
@@ -206,6 +287,7 @@ class App:
         ttk.Label(f, text="Output .sid:").grid(row=1, column=0, sticky="w", padx=4, pady=4)
         self.conv_out = ttk.Entry(f, width=60)
         self.conv_out.grid(row=1, column=1, sticky="we", padx=4)
+        _enable_dnd(self.conv_out)
         ttk.Button(
             f, text="Save as...",
             command=lambda: _browse(
@@ -268,6 +350,7 @@ class App:
         ttk.Label(f, text="Input audio:").grid(row=0, column=0, sticky="w", padx=4, pady=4)
         self.a2s_in = ttk.Entry(f, width=60)
         self.a2s_in.grid(row=0, column=1, sticky="we", padx=4)
+        _enable_dnd(self.a2s_in)
         ttk.Button(
             f, text="Browse...",
             command=lambda: _browse(self.a2s_in, save=False, types=AUDIO_FILETYPES),
@@ -276,6 +359,7 @@ class App:
         ttk.Label(f, text="Output .sid:").grid(row=1, column=0, sticky="w", padx=4, pady=4)
         self.a2s_out = ttk.Entry(f, width=60)
         self.a2s_out.grid(row=1, column=1, sticky="we", padx=4)
+        _enable_dnd(self.a2s_out)
         ttk.Button(
             f, text="Save as...",
             command=lambda: _browse(
@@ -295,14 +379,37 @@ class App:
             entry.grid(row=i, column=1, sticky="we", padx=4)
             setattr(self, attr, entry)
 
+        ttk.Label(f, text="Voices:").grid(row=5, column=0, sticky="w", padx=4)
+        self.a2s_voices = tk.IntVar(value=3)
+        ttk.Radiobutton(f, text="1 (mono)", variable=self.a2s_voices, value=1).grid(
+            row=5, column=1, sticky="w", padx=4
+        )
+        ttk.Radiobutton(
+            f, text="3 (melody + bass + harmony)", variable=self.a2s_voices, value=3
+        ).grid(row=5, column=1, padx=80, sticky="w")
+
+        ttk.Label(f, text="Waveform:").grid(row=6, column=0, sticky="w", padx=4)
+        self.a2s_waveform = tk.StringVar(value="triangle")
+        ttk.Combobox(
+            f, textvariable=self.a2s_waveform,
+            values=("triangle", "sawtooth", "pulse", "noise"),
+            state="readonly", width=12,
+        ).grid(row=6, column=1, sticky="w", padx=4)
+
+        ttk.Label(f, text="ADSR (A,D,S,R 0-15):").grid(row=7, column=0, sticky="w", padx=4)
+        self.a2s_adsr = ttk.Entry(f, width=12)
+        self.a2s_adsr.insert(0, "0,0,15,0")
+        self.a2s_adsr.grid(row=7, column=1, sticky="w", padx=4)
+
         ttk.Button(f, text="Generate .sid", command=self._do_audio).grid(
-            row=5, column=1, sticky="w", padx=4, pady=8
+            row=8, column=1, sticky="w", padx=4, pady=8
         )
         ttk.Label(
             f,
-            text="Note: monophonic best-effort. Output is a single triangle voice.",
+            text="Note: best-effort. Pitch is detected monophonically; "
+                 "3-voice mode synthesises a fixed bass + fifth around the melody.",
             foreground="gray40",
-        ).grid(row=6, column=0, columnspan=3, sticky="w", padx=4)
+        ).grid(row=9, column=0, columnspan=3, sticky="w", padx=4)
         f.columnconfigure(1, weight=1)
 
     def _do_audio(self) -> None:
@@ -317,12 +424,16 @@ class App:
         name = self.a2s_name.get() or "Untitled"
         author = self.a2s_author.get() or "sidconverter"
         released = self.a2s_released.get() or "2026"
+        voices = self.a2s_voices.get()
+        waveform = self.a2s_waveform.get()
+        adsr = self.a2s_adsr.get() or "0,0,15,0"
 
         def go() -> None:
             n, secs = audio_to_sid.convert_audio(
-                src, out, name=name, author=author, released=released
+                src, out, name=name, author=author, released=released,
+                voices=voices, waveform=waveform, adsr=adsr,
             )
-            print(f"wrote {out}  ({n} notes, {secs:.1f}s)")
+            print(f"wrote {out}  ({n} notes, {secs:.1f}s, {voices} voice(s), {waveform})")
 
         self._run_async("audio -> sid", go)
 
@@ -331,7 +442,7 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="sidconverter-gui", description="SID toolkit GUI")
     parser.parse_args(argv)
     try:
-        root = tk.Tk()
+        root = TkinterDnD.Tk() if _DND_AVAILABLE else tk.Tk()
     except tk.TclError as e:
         print(f"error: cannot open display ({e}). Use the CLI instead.", file=sys.stderr)
         return 1
