@@ -1,0 +1,25 @@
+{
+  "artboards": [
+    { "file": "Main.dc.html", "x": 0, "y": 0, "w": 1180, "h": 760, "title": "Main window — live" },
+    { "file": "States.dc.html", "x": 1300, "y": 0, "w": 940, "h": 1080, "title": "Run states" },
+    { "file": "Ergonomics.dc.html", "x": 0, "y": 1220, "w": 1180, "h": 1020, "title": "Ergonomics" },
+    { "file": "System.dc.html", "x": 1300, "y": 1220, "w": 1180, "h": 900, "title": "System" }
+  ],
+  "annotations": [
+    {
+      "id": "live-prototype",
+      "x": 0,
+      "y": -180,
+      "w": 560,
+      "text": "This one is live. Click the rail to move between the five operations; the waveform picker, voice count, ADSR sliders, model and target segments and every checkbox all respond.\n\nThe CLI line at the foot of each panel rewrites itself as you go — that mirroring is the point, not decoration."
+    },
+    {
+      "id": "drawn-states",
+      "x": 1300,
+      "y": -180,
+      "w": 470,
+      "text": "The four moments you cannot click your way into: nothing loaded, a render in flight, a failure, and a finished result.\n\nEach one replaces the panel region only — the chrome around it never moves."
+    }
+  ],
+  "launch": { "view": "canvas" }
+}

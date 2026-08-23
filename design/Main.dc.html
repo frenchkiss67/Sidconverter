@@ -1,0 +1,878 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+  <style>
+    body { margin: 0; background: #191714; }
+    a { color: #3FBFC4; text-decoration: none; }
+    a:hover { color: #74D8DC; }
+    .rng {
+      -webkit-appearance: none; appearance: none;
+      width: 100%; height: 3px; border-radius: 2px;
+      background: #3A342E; outline: none; cursor: pointer;
+    }
+    .rng::-webkit-slider-thumb {
+      -webkit-appearance: none; appearance: none;
+      width: 13px; height: 13px; border-radius: 50%;
+      background: var(--acc, #3FBFC4); border: none; cursor: pointer;
+    }
+    .rng::-moz-range-thumb {
+      width: 13px; height: 13px; border-radius: 50%;
+      background: var(--acc, #3FBFC4); border: none; cursor: pointer;
+    }
+  </style>
+</helmet>
+
+<div style="--acc: {{accent}}; width: 1180px; height: 760px; background: #191714; color: #F0EBE4; font-family: 'Space Grotesk', system-ui, 'Helvetica Neue', sans-serif; font-size: 13px; display: flex; flex-direction: column; overflow: hidden;">
+
+  <!-- ── title bar ─────────────────────────────────────────── -->
+  <div style="height: 44px; flex-shrink: 0; display: flex; align-items: center; gap: 11px; padding: 0 14px; background: #201D1A; border-bottom: 1px solid #34302B;">
+    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="{{accent}}" stroke-width="1.6" stroke-linecap="round">
+      <rect x="5.5" y="5.5" width="13" height="13" rx="2.5"></rect>
+      <path d="M9 2.5v3M15 2.5v3M9 18.5v3M15 18.5v3M2.5 9h3M2.5 15h3M18.5 9h3M18.5 15h3"></path>
+      <path d="M9 13.5c1-3 2 3 3 0s2 3 3 0"></path>
+    </svg>
+    <div style="font-size: 13.5px; font-weight: 600; letter-spacing: 0.005em;">Sidconverter</div>
+    <div style="width: 1px; height: 15px; background: #3A342E;"></div>
+    <div style="font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace; font-size: 11px; color: #6F675E;">0.1.0</div>
+
+    <div style="flex-grow: 1;"></div>
+
+    <div style="display: flex; align-items: center; gap: 7px; height: 25px; padding: 0 10px; border-radius: 13px; background: #241F1B; border: 1px solid #34302B;">
+      <div style="width: 6px; height: 6px; border-radius: 50%; background: {{deps.dot}};"></div>
+      <div style="font-size: 11.5px; color: #ABA298;">{{deps.label}}</div>
+    </div>
+    <div style="display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 5px; background: transparent;">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8D857B" stroke-width="1.6" stroke-linecap="round">
+        <circle cx="12" cy="12" r="3.2"></circle>
+        <path d="M12 2.8v2.6M12 18.6v2.6M21.2 12h-2.6M5.4 12H2.8M18.5 5.5l-1.8 1.8M7.3 16.7l-1.8 1.8M18.5 18.5l-1.8-1.8M7.3 7.3L5.5 5.5"></path>
+      </svg>
+    </div>
+  </div>
+
+  <!-- ── subject bar : the loaded document ─────────────────── -->
+  <div style="height: 60px; flex-shrink: 0; display: flex; align-items: center; gap: 13px; padding: 0 16px; background: #1C1A17; border-bottom: 1px solid #34302B;">
+    <div style="display: flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 7px; background: #262019; border: 1px solid #3A342E; flex-shrink: 0;">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="{{accent}}" stroke-width="1.6" stroke-linecap="round">
+        <path d="M4 10v4M8 6.5v11M12 3.5v17M16 7.5v9M20 10.5v3"></path>
+      </svg>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 3px; min-width: 0;">
+      <div style="display: flex; align-items: center; gap: 9px;">
+        <div style="font-size: 14px; font-weight: 600; letter-spacing: -0.005em;">Neon_Harbour.sid</div>
+        <div style="display: flex; align-items: center; gap: 5px; height: 18px; padding: 0 7px; border-radius: 3px; background: rgba(63,191,196,0.13); border: 1px solid rgba(63,191,196,0.28);">
+          <div style="font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 10px; font-weight: 500; color: {{accent}}; letter-spacing: 0.03em;">PSID v2</div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 5px;">
+          <div style="width: 5px; height: 5px; border-radius: 50%; background: {{accent}};"></div>
+          <div style="font-size: 11.5px; color: #8D857B;">valid</div>
+        </div>
+      </div>
+      <div style="font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; color: #6F675E; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">~/Music/HVSC/MUSICIANS/F/Farge_M/Neon_Harbour.sid</div>
+    </div>
+
+    <div style="flex-grow: 1;"></div>
+
+    <div style="display: flex; align-items: center; gap: 7px;">
+      <div style="display: flex; align-items: center; gap: 7px; height: 30px; padding: 0 12px; border-radius: 5px; background: #262019; border: 1px solid #47413A; cursor: pointer;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C6BEB4" stroke-width="1.7" stroke-linecap="round">
+          <path d="M3 7.5A1.5 1.5 0 014.5 6h4l2 2.5h7A1.5 1.5 0 0119 10v7a1.5 1.5 0 01-1.5 1.5h-13A1.5 1.5 0 013 17V7.5z"></path>
+        </svg>
+        <div style="font-size: 12.5px; font-weight: 500; color: #E4DED6;">Open…</div>
+      </div>
+      <div style="display: flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 5px; background: #262019; border: 1px solid #47413A;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#8D857B" stroke-width="1.7" stroke-linecap="round">
+          <path d="M5 12h14M13 6l6 6-6 6"></path>
+        </svg>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── body ──────────────────────────────────────────────── -->
+  <div style="flex-grow: 1; display: flex; min-height: 0;">
+
+    <!-- rail -->
+    <div style="width: 206px; flex-shrink: 0; background: #1C1A17; border-right: 1px solid #34302B; padding: 11px 10px 10px 10px; display: flex; flex-direction: column; gap: 2px;">
+      <div style="font-size: 10px; font-weight: 600; letter-spacing: 0.09em; color: #5E574F; padding: 3px 6px 7px 6px;">OPERATIONS</div>
+
+      <div style="{{nav.inspect.box}}" onClick="{{nav.inspect.pick}}">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="{{nav.inspect.ink}}" stroke-width="1.7" stroke-linecap="round">
+          <circle cx="10.5" cy="10.5" r="6.5"></circle><path d="M15.4 15.4L20.5 20.5"></path>
+        </svg>
+        <div style="{{nav.inspect.txt}}">Inspect</div>
+      </div>
+
+      <div style="{{nav.validate.box}}" onClick="{{nav.validate.pick}}">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="{{nav.validate.ink}}" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 3l7.5 3v6.2c0 4.6-3.2 7.8-7.5 9.3-4.3-1.5-7.5-4.7-7.5-9.3V6L12 3z"></path>
+          <path d="M8.6 12.2l2.5 2.5 4.6-5.1"></path>
+        </svg>
+        <div style="{{nav.validate.txt}}">Validate</div>
+        <div style="flex-grow: 1;"></div>
+        <div style="display: flex; align-items: center; height: 17px; padding: 0 6px; border-radius: 9px; background: rgba(227,160,60,0.16);">
+          <div style="font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 10px; font-weight: 600; color: #E3A03C;">2</div>
+        </div>
+      </div>
+
+      <div style="{{nav.render.box}}" onClick="{{nav.render.pick}}">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="{{nav.render.ink}}" stroke-width="1.7" stroke-linecap="round">
+          <path d="M4 10v4M8 6v12M12 8.5v7M16 4v16M20 10v4"></path>
+        </svg>
+        <div style="{{nav.render.txt}}">Render to audio</div>
+      </div>
+
+      <div style="{{nav.convert.box}}" onClick="{{nav.convert.pick}}">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="{{nav.convert.ink}}" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 8.5h13M14 5.5l3 3-3 3"></path><path d="M20 15.5H7M10 12.5l-3 3 3 3"></path>
+        </svg>
+        <div style="{{nav.convert.txt}}">Convert format</div>
+      </div>
+
+      <div style="{{nav.audio.box}}" onClick="{{nav.audio.pick}}">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="{{nav.audio.ink}}" stroke-width="1.7" stroke-linecap="round">
+          <path d="M3 10v4M6.5 6.5v11M10 9v6"></path><path d="M14 12h6.5M17.5 9l3 3-3 3"></path>
+        </svg>
+        <div style="{{nav.audio.txt}}">Audio → SID</div>
+      </div>
+
+      <div style="flex-grow: 1;"></div>
+
+      <div style="padding: 10px; border-radius: 7px; background: #201C19; border: 1px solid #302B26; display: flex; flex-direction: column; gap: 7px;">
+        <div style="font-size: 10px; font-weight: 600; letter-spacing: 0.09em; color: #5E574F;">EXTERNAL TOOLS</div>
+        <div style="display: flex; align-items: center; gap: 7px;">
+          <div style="width: 5px; height: 5px; border-radius: 50%; background: {{deps.dot}};"></div>
+          <div style="font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; color: #ABA298;">sidplayfp</div>
+          <div style="flex-grow: 1;"></div>
+          <div style="font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 10.5px; color: {{deps.verInk}};">{{deps.sidplay}}</div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 7px;">
+          <div style="width: 5px; height: 5px; border-radius: 50%; background: {{accent}};"></div>
+          <div style="font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; color: #ABA298;">ffmpeg</div>
+          <div style="flex-grow: 1;"></div>
+          <div style="font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 10.5px; color: #6F675E;">7.1</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- panel -->
+    <div style="flex-grow: 1; min-width: 0; padding: 19px 22px; display: flex; flex-direction: column; gap: 15px; overflow: hidden;">
+
+      <!-- ══ INSPECT ══ -->
+      <sc-if value="{{isInspect}}" hint-placeholder-val="{{ true }}">
+        <div style="display: flex; align-items: flex-end; gap: 12px;">
+          <div style="display: flex; flex-direction: column; gap: 3px;">
+            <div style="font-size: 19px; font-weight: 600; letter-spacing: -0.015em;">Inspect</div>
+            <div style="font-size: 12.5px; color: #8D857B;">Header fields, decoded flags and both songlength hashes.</div>
+          </div>
+          <div style="flex-grow: 1;"></div>
+          <div style="display: flex; align-items: center; gap: 7px; height: 29px; padding: 0 11px; border-radius: 5px; background: #262019; border: 1px solid #47413A;">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#C6BEB4" stroke-width="1.8" stroke-linecap="round">
+              <path d="M9 3.5h11.5v11.5M14.5 9.5H3.5v11h11z"></path>
+            </svg>
+            <div style="font-size: 12px; font-weight: 500; color: #E4DED6;">Copy JSON</div>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 13px;">
+          <div style="padding: 14px 15px; border-radius: 8px; background: #201D1A; border: 1px solid #302B26; display: flex; flex-direction: column; gap: 11px;">
+            <div style="font-size: 10px; font-weight: 600; letter-spacing: 0.09em; color: #5E574F;">IDENTITY</div>
+            <div style="display: flex; flex-direction: column; gap: 9px;">
+              <div style="display: flex; align-items: baseline; gap: 12px;">
+                <div style="width: 66px; flex-shrink: 0; font-size: 11.5px; color: #6F675E;">Name</div>
+                <div style="font-size: 13px; font-weight: 500;">Neon Harbour</div>
+              </div>
+              <div style="display: flex; align-items: baseline; gap: 12px;">
+                <div style="width: 66px; flex-shrink: 0; font-size: 11.5px; color: #6F675E;">Author</div>
+                <div style="font-size: 13px; font-weight: 500;">M. Farge</div>
+              </div>
+              <div style="display: flex; align-items: baseline; gap: 12px;">
+                <div style="width: 66px; flex-shrink: 0; font-size: 11.5px; color: #6F675E;">Released</div>
+                <div style="font-size: 13px; font-weight: 500;">2026 Frenchkiss</div>
+              </div>
+              <div style="display: flex; align-items: baseline; gap: 12px;">
+                <div style="width: 66px; flex-shrink: 0; font-size: 11.5px; color: #6F675E;">Songs</div>
+                <div style="font-size: 13px; font-weight: 500;">3 <span style="color: #6F675E; font-weight: 400;">· starts at #1</span></div>
+              </div>
+            </div>
+          </div>
+
+          <div style="padding: 14px 15px; border-radius: 8px; background: #201D1A; border: 1px solid #302B26; display: flex; flex-direction: column; gap: 11px;">
+            <div style="display: flex; align-items: center; gap: 9px;">
+              <div style="font-size: 10px; font-weight: 600; letter-spacing: 0.09em; color: #5E574F;">FLAGS</div>
+              <div style="font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 10.5px; color: #6F675E;">$0014</div>
+            </div>
+            <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+              <div style="display: flex; align-items: center; height: 24px; padding: 0 9px; border-radius: 4px; background: #262019; border: 1px solid #3A342E;">
+                <div style="font-size: 11.5px; color: #C6BEB4;">clock <span style="color: #F0EBE4; font-weight: 600;">PAL</span></div>
+              </div>
+              <div style="display: flex; align-items: center; height: 24px; padding: 0 9px; border-radius: 4px; background: #262019; border: 1px solid #3A342E;">
+                <div style="font-size: 11.5px; color: #C6BEB4;">chip <span style="color: #F0EBE4; font-weight: 600;">MOS 6581</span></div>
+              </div>
+              <div style="display: flex; align-items: center; height: 24px; padding: 0 9px; border-radius: 4px; background: #1D1A17; border: 1px dashed #3A342E;">
+                <div style="font-size: 11.5px; color: #6F675E;">no MUS data</div>
+              </div>
+              <div style="display: flex; align-items: center; height: 24px; padding: 0 9px; border-radius: 4px; background: #1D1A17; border: 1px dashed #3A342E;">
+                <div style="font-size: 11.5px; color: #6F675E;">single SID</div>
+              </div>
+            </div>
+            <div style="height: 1px; background: #2C2723;"></div>
+            <div style="display: flex; align-items: baseline; gap: 12px;">
+              <div style="width: 66px; flex-shrink: 0; font-size: 11.5px; color: #6F675E;">Payload</div>
+              <div style="font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px;">2 050 <span style="color: #6F675E;">bytes of 6510</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div style="padding: 14px 15px; border-radius: 8px; background: #201D1A; border: 1px solid #302B26; display: flex; flex-direction: column; gap: 12px;">
+          <div style="display: flex; align-items: center; gap: 14px;">
+            <div style="font-size: 10px; font-weight: 600; letter-spacing: 0.09em; color: #5E574F;">MEMORY MAP</div>
+            <div style="display: flex; align-items: center; gap: 13px;">
+              <div style="display: flex; align-items: center; gap: 6px;"><div style="width: 8px; height: 8px; border-radius: 2px; background: {{accent}};"></div><div style="font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; color: #ABA298;">load $C000</div></div>
+              <div style="display: flex; align-items: center; gap: 6px;"><div style="width: 8px; height: 8px; border-radius: 2px; background: #E3A03C;"></div><div style="font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; color: #ABA298;">init $C000</div></div>
+              <div style="display: flex; align-items: center; gap: 6px;"><div style="width: 8px; height: 8px; border-radius: 2px; background: #A98BD8;"></div><div style="font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; color: #ABA298;">play $C003</div></div>
+            </div>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 5px;">
+            <div style="position: relative; height: 22px; border-radius: 4px; background: #17150F; border: 1px solid #2C2723; overflow: hidden;">
+              <div style="position: absolute; left: 62.5%; top: 0; width: 8.6%; height: 100%; background: rgba(63,191,196,0.30); border-left: 2px solid #3FBFC4; border-right: 1px solid rgba(63,191,196,0.5);"></div>
+              <div style="position: absolute; left: 62.5%; top: 0; width: 2px; height: 100%; background: #E3A03C;"></div>
+              <div style="position: absolute; left: 63.1%; top: 0; width: 2px; height: 100%; background: #A98BD8;"></div>
+              <div style="position: absolute; left: 40%; top: 0; width: 6.25%; height: 100%; background: repeating-linear-gradient(45deg, #241F1B, #241F1B 3px, #1D1A17 3px, #1D1A17 6px);"></div>
+              <div style="position: absolute; left: 81.25%; top: 0; width: 18.75%; height: 100%; background: repeating-linear-gradient(45deg, #241F1B, #241F1B 3px, #1D1A17 3px, #1D1A17 6px);"></div>
+            </div>
+            <div style="display: flex; justify-content: space-between; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 10px; color: #5E574F;">
+              <div>$0000</div><div>$4000</div><div>$8000</div><div>$C000</div><div>$FFFF</div>
+            </div>
+          </div>
+        </div>
+
+        <div style="padding: 14px 15px; border-radius: 8px; background: #201D1A; border: 1px solid #302B26; display: flex; flex-direction: column; gap: 11px;">
+          <div style="font-size: 10px; font-weight: 600; letter-spacing: 0.09em; color: #5E574F;">SONGLENGTH HASHES</div>
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <div style="width: 74px; flex-shrink: 0; display: flex; align-items: center; height: 20px; padding: 0 7px; border-radius: 3px; background: #262019; border: 1px solid #3A342E;">
+              <div style="font-size: 10.5px; color: #8D857B;">md5 old</div>
+            </div>
+            <div style="flex-grow: 1; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; letter-spacing: 0.01em; color: #D8D1C8;">3e762ef4345140cbefaf37badfddf8ae</div>
+            <div style="display: flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 4px; background: #262019; border: 1px solid #3A342E;">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#8D857B" stroke-width="1.8" stroke-linecap="round"><path d="M9 3.5h11.5v11.5M14.5 9.5H3.5v11h11z"></path></svg>
+            </div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <div style="width: 74px; flex-shrink: 0; display: flex; align-items: center; height: 20px; padding: 0 7px; border-radius: 3px; background: rgba(63,191,196,0.13); border: 1px solid rgba(63,191,196,0.28);">
+              <div style="font-size: 10.5px; color: {{accent}};">md5 new</div>
+            </div>
+            <div style="flex-grow: 1; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; letter-spacing: 0.01em; color: #D8D1C8;">35fef7129701bb38b5a1c9b6e095defa</div>
+            <div style="display: flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 4px; background: #262019; border: 1px solid #3A342E;">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#8D857B" stroke-width="1.8" stroke-linecap="round"><path d="M9 3.5h11.5v11.5M14.5 9.5H3.5v11h11z"></path></svg>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- ══ VALIDATE ══ -->
+      <sc-if value="{{isValidate}}" hint-placeholder-val="{{ false }}">
+        <div style="display: flex; align-items: flex-end; gap: 12px;">
+          <div style="display: flex; flex-direction: column; gap: 3px;">
+            <div style="font-size: 19px; font-weight: 600; letter-spacing: -0.015em;">Validate</div>
+            <div style="font-size: 12.5px; color: #8D857B;">Checked against the PSID v2NG specification.</div>
+          </div>
+          <div style="flex-grow: 1;"></div>
+          <div style="display: flex; align-items: center; gap: 9px; cursor: pointer;" onClick="{{strict.toggle}}">
+            <div style="{{strict.box}}">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#191714" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" style="{{strict.tick}}"><path d="M4.5 12.5l5 5 10-11"></path></svg>
+            </div>
+            <div style="font-size: 12.5px; color: #C6BEB4;">Treat warnings as failure</div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 7px; height: 30px; padding: 0 13px; border-radius: 5px; background: {{accent}};">
+            <div style="font-size: 12.5px; font-weight: 600; color: #17150F;">Re-run</div>
+          </div>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 13px; padding: 13px 15px; border-radius: 8px; background: {{verdict.bg}}; border: 1px solid {{verdict.line}};">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="{{verdict.ink}}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="9"></circle><path d="M12 7.5v5.5M12 16.3v.2"></path>
+          </svg>
+          <div style="display: flex; flex-direction: column; gap: 2px;">
+            <div style="font-size: 14px; font-weight: 600; color: {{verdict.ink}};">{{verdict.title}}</div>
+            <div style="font-size: 12px; color: #ABA298;">{{verdict.sub}}</div>
+          </div>
+          <div style="flex-grow: 1;"></div>
+          <div style="font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; color: #6F675E;">exit {{verdict.code}}</div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+          <sc-for list="{{findings}}" as="f" hint-placeholder-count="2">
+            <div style="display: flex; gap: 12px; padding: 12px 14px; border-radius: 7px; background: #201D1A; border: 1px solid #302B26; border-left: 2px solid {{f.ink}};">
+              <div style="display: flex; align-items: center; height: 19px; padding: 0 7px; border-radius: 3px; background: {{f.chipBg}}; flex-shrink: 0;">
+                <div style="font-size: 10px; font-weight: 600; letter-spacing: 0.05em; color: {{f.ink}};">{{f.sev}}</div>
+              </div>
+              <div style="display: flex; flex-direction: column; gap: 4px; min-width: 0;">
+                <div style="font-size: 12.5px; color: #E4DED6; line-height: 1.45;">{{f.msg}}</div>
+                <div style="font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 10.5px; color: #6F675E;">{{f.ref}}</div>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 10px; padding: 11px 14px; border-radius: 7px; background: #1D1A17; border: 1px dashed #3A342E;">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#6F675E" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 16.5v-5M12 8v.2"></path></svg>
+          <div style="font-size: 12px; color: #8D857B;">14 further checks passed — version range, song indices, secondary SID addresses, load bounds.</div>
+        </div>
+      </sc-if>
+
+      <!-- ══ RENDER ══ -->
+      <sc-if value="{{isRender}}" hint-placeholder-val="{{ false }}">
+        <div style="display: flex; align-items: flex-end; gap: 12px;">
+          <div style="display: flex; flex-direction: column; gap: 3px;">
+            <div style="font-size: 19px; font-weight: 600; letter-spacing: -0.015em;">Render to audio</div>
+            <div style="font-size: 12.5px; color: #8D857B;">Emulated through sidplayfp, muxed with ffmpeg when needed.</div>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 15px;">
+          <div style="display: flex; flex-direction: column; gap: 13px;">
+            <div style="display: flex; flex-direction: column; gap: 7px;">
+              <div style="font-size: 10px; font-weight: 600; letter-spacing: 0.09em; color: #5E574F;">OUTPUT FILE</div>
+              <div style="display: flex; gap: 8px;">
+                <div style="flex-grow: 1; display: flex; align-items: center; height: 32px; padding: 0 11px; border-radius: 5px; background: #17150F; border: 1px solid #47413A;">
+                  <div style="font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11.5px; color: #D8D1C8;">~/Renders/Neon_Harbour.wav</div>
+                </div>
+                <div style="display: flex; align-items: center; height: 32px; padding: 0 12px; border-radius: 5px; background: #262019; border: 1px solid #47413A;">
+                  <div style="font-size: 12px; font-weight: 500; color: #E4DED6;">Save as…</div>
+                </div>
+              </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 13px;">
+              <div style="display: flex; flex-direction: column; gap: 7px;">
+                <div style="font-size: 10px; font-weight: 600; letter-spacing: 0.09em; color: #5E574F;">DURATION</div>
+                <div style="display: flex; align-items: center; height: 32px; border-radius: 5px; background: #17150F; border: 1px solid #47413A; overflow: hidden;">
+                  <div style="flex-grow: 1; padding: 0 11px; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px;">180 <span style="color: #6F675E;">s</span></div>
+                  <div style="display: flex; flex-direction: column; width: 22px; height: 100%; border-left: 1px solid #3A342E;">
+                    <div style="flex-grow: 1; display: flex; align-items: center; justify-content: center; border-bottom: 1px solid #3A342E;"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#8D857B" stroke-width="2.6" stroke-linecap="round"><path d="M5 15l7-7 7 7"></path></svg></div>
+                    <div style="flex-grow: 1; display: flex; align-items: center; justify-content: center;"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#8D857B" stroke-width="2.6" stroke-linecap="round"><path d="M5 9l7 7 7-7"></path></svg></div>
+                  </div>
+                </div>
+              </div>
+              <div style="display: flex; flex-direction: column; gap: 7px;">
+                <div style="font-size: 10px; font-weight: 600; letter-spacing: 0.09em; color: #5E574F;">SUBTUNE</div>
+                <div style="display: flex; gap: 4px;">
+                  <div style="{{sub.a.box}}" onClick="{{sub.a.pick}}"><div style="{{sub.a.txt}}">1</div></div>
+                  <div style="{{sub.b.box}}" onClick="{{sub.b.pick}}"><div style="{{sub.b.txt}}">2</div></div>
+                  <div style="{{sub.c.box}}" onClick="{{sub.c.pick}}"><div style="{{sub.c.txt}}">3</div></div>
+                </div>
+              </div>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 7px;">
+              <div style="font-size: 10px; font-weight: 600; letter-spacing: 0.09em; color: #5E574F;">SID MODEL</div>
+              <div style="display: flex; gap: 4px;">
+                <div style="{{model.auto.box}}" onClick="{{model.auto.pick}}"><div style="{{model.auto.txt}}">Auto <span style="opacity: .55;">(from header)</span></div></div>
+                <div style="{{model.a.box}}" onClick="{{model.a.pick}}"><div style="{{model.a.txt}}">6581</div></div>
+                <div style="{{model.b.box}}" onClick="{{model.b.pick}}"><div style="{{model.b.txt}}">8580</div></div>
+              </div>
+            </div>
+
+            <div style="display: flex; align-items: center; gap: 9px; cursor: pointer;" onClick="{{nofilter.toggle}}">
+              <div style="{{nofilter.box}}">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#191714" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" style="{{nofilter.tick}}"><path d="M4.5 12.5l5 5 10-11"></path></svg>
+              </div>
+              <div style="font-size: 12.5px; color: #C6BEB4;">Disable filter emulation</div>
+            </div>
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 13px;">
+            <div style="padding: 13px 14px; border-radius: 8px; background: {{depsPanel.bg}}; border: 1px solid {{depsPanel.line}}; display: flex; flex-direction: column; gap: 9px;">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <div style="width: 6px; height: 6px; border-radius: 50%; background: {{deps.dot}};"></div>
+                <div style="font-size: 12.5px; font-weight: 600; color: {{depsPanel.ink}};">{{depsPanel.title}}</div>
+              </div>
+              <div style="font-size: 12px; color: #ABA298; line-height: 1.5;">{{depsPanel.body}}</div>
+              <div style="font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; color: #D8D1C8; padding: 7px 9px; border-radius: 4px; background: #17150F; border: 1px solid #2C2723;">{{depsPanel.cmd}}</div>
+            </div>
+
+            <div style="padding: 13px 14px; border-radius: 8px; background: #201D1A; border: 1px solid #302B26; display: flex; flex-direction: column; gap: 9px;">
+              <div style="font-size: 10px; font-weight: 600; letter-spacing: 0.09em; color: #5E574F;">ESTIMATE</div>
+              <div style="display: flex; align-items: baseline; gap: 8px;">
+                <div style="font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 21px; font-weight: 600; letter-spacing: -0.01em;">31.0</div>
+                <div style="font-size: 12px; color: #8D857B;">MB · 48 kHz · 16-bit stereo</div>
+              </div>
+              <div style="height: 1px; background: #2C2723;"></div>
+              <div style="font-size: 11.5px; color: #6F675E; line-height: 1.5;">Song 1 of 3 · fixed 180 s because no HVSC songlength database is configured.</div>
+            </div>
+          </div>
+        </div>
+
+        <div style="flex-grow: 1;"></div>
+
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <div style="flex-grow: 1; display: flex; align-items: center; gap: 9px; height: 32px; padding: 0 11px; border-radius: 5px; background: #17150F; border: 1px solid #2C2723; overflow: hidden;">
+            <div style="font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 10px; color: #5E574F; flex-shrink: 0;">CLI</div>
+            <div style="font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; color: #9C948A; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{renderCmd}}</div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 8px; height: 34px; padding: 0 18px; border-radius: 5px; background: {{accent}};">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#17150F" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4.5l12 7.5-12 7.5z"></path></svg>
+            <div style="font-size: 13px; font-weight: 600; color: #17150F;">Render</div>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- ══ CONVERT ══ -->
+      <sc-if value="{{isConvert}}" hint-placeholder-val="{{ false }}">
+        <div style="display: flex; align-items: flex-end; gap: 12px;">
+          <div style="display: flex; flex-direction: column; gap: 3px;">
+            <div style="font-size: 19px; font-weight: 600; letter-spacing: -0.015em;">Convert format</div>
+            <div style="font-size: 12.5px; color: #8D857B;">Rewrites the magic and the format flag. The 6510 code is untouched.</div>
+          </div>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 16px; padding: 15px 16px; border-radius: 8px; background: #201D1A; border: 1px solid #302B26;">
+          <div style="display: flex; flex-direction: column; gap: 5px; align-items: center;">
+            <div style="display: flex; align-items: center; height: 26px; padding: 0 12px; border-radius: 4px; background: #262019; border: 1px solid #47413A;">
+              <div style="font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12.5px; font-weight: 600; color: #E4DED6;">PSID</div>
+            </div>
+            <div style="font-size: 10.5px; color: #6F675E;">current</div>
+          </div>
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#5E574F" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h15M14 7l5 5-5 5"></path></svg>
+          <div style="display: flex; flex-direction: column; gap: 7px;">
+            <div style="font-size: 10px; font-weight: 600; letter-spacing: 0.09em; color: #5E574F;">TARGET</div>
+            <div style="display: flex; gap: 4px;">
+              <div style="{{target.auto.box}}" onClick="{{target.auto.pick}}"><div style="{{target.auto.txt}}">Auto → RSID</div></div>
+              <div style="{{target.p.box}}" onClick="{{target.p.pick}}"><div style="{{target.p.txt}}">PSID</div></div>
+              <div style="{{target.r.box}}" onClick="{{target.r.pick}}"><div style="{{target.r.txt}}">RSID</div></div>
+            </div>
+          </div>
+          <div style="flex-grow: 1;"></div>
+          <div style="display: flex; flex-direction: column; gap: 5px; align-items: flex-end;">
+            <div style="font-size: 10.5px; color: #6F675E;">writes to</div>
+            <div style="font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11.5px; color: #D8D1C8;">Neon_Harbour_rsid.sid</div>
+          </div>
+        </div>
+
+        <div style="padding: 14px 15px; border-radius: 8px; background: rgba(227,160,60,0.07); border: 1px solid rgba(227,160,60,0.28); display: flex; flex-direction: column; gap: 11px;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#E3A03C" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4l9 15.5H3L12 4z"></path><path d="M12 10v4M12 17v.2"></path></svg>
+            <div style="font-size: 13px; font-weight: 600; color: #E3A03C;">Conversion blocked — 2 spec conflicts</div>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 7px;">
+            <div style="display: flex; gap: 9px;">
+              <div style="width: 3px; border-radius: 2px; background: rgba(227,160,60,0.4); flex-shrink: 0;"></div>
+              <div style="font-size: 12.5px; color: #D8D1C8; line-height: 1.5;">Play address <span style="font-family: 'JetBrains Mono', ui-monospace, monospace; color: #E3A03C;">$C003</span> is non-zero. RSID requires <span style="font-family: 'JetBrains Mono', ui-monospace, monospace;">play = 0</span> and a self-driven CIA interrupt.</div>
+            </div>
+            <div style="display: flex; gap: 9px;">
+              <div style="width: 3px; border-radius: 2px; background: rgba(227,160,60,0.4); flex-shrink: 0;"></div>
+              <div style="font-size: 12.5px; color: #D8D1C8; line-height: 1.5;">Speed word <span style="font-family: 'JetBrains Mono', ui-monospace, monospace; color: #E3A03C;">$00000001</span> is non-zero. RSID requires <span style="font-family: 'JetBrains Mono', ui-monospace, monospace;">speed = 0</span>.</div>
+            </div>
+          </div>
+          <div style="height: 1px; background: rgba(227,160,60,0.18);"></div>
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <div style="display: flex; align-items: center; gap: 9px; cursor: pointer;" onClick="{{force.toggle}}">
+              <div style="{{force.box}}">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#191714" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" style="{{force.tick}}"><path d="M4.5 12.5l5 5 10-11"></path></svg>
+              </div>
+              <div style="font-size: 12.5px; color: #C6BEB4;">Write anyway — I know the result may not play</div>
+            </div>
+            <div style="flex-grow: 1;"></div>
+            <div style="font-size: 11.5px; color: #6F675E;">{{force.hint}}</div>
+          </div>
+        </div>
+
+        <div style="flex-grow: 1;"></div>
+
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <div style="flex-grow: 1; display: flex; align-items: center; gap: 9px; height: 32px; padding: 0 11px; border-radius: 5px; background: #17150F; border: 1px solid #2C2723; overflow: hidden;">
+            <div style="font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 10px; color: #5E574F; flex-shrink: 0;">CLI</div>
+            <div style="font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; color: #9C948A; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{convertCmd}}</div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 8px; height: 34px; padding: 0 18px; border-radius: 5px; background: {{convertBtn.bg}}; border: 1px solid {{convertBtn.line}};">
+            <div style="font-size: 13px; font-weight: 600; color: {{convertBtn.ink}};">Convert</div>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- ══ AUDIO → SID ══ -->
+      <sc-if value="{{isAudio}}" hint-placeholder-val="{{ false }}">
+        <div style="display: flex; align-items: flex-end; gap: 12px;">
+          <div style="display: flex; flex-direction: column; gap: 3px;">
+            <div style="font-size: 19px; font-weight: 600; letter-spacing: -0.015em;">Audio → SID</div>
+            <div style="font-size: 12.5px; color: #8D857B;">Monophonic pitch detection, voiced onto a generated 6510 player.</div>
+          </div>
+          <div style="flex-grow: 1;"></div>
+          <div style="display: flex; align-items: center; gap: 8px; height: 26px; padding: 0 11px; border-radius: 13px; background: #241F1B; border: 1px solid #3A342E;">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#8D857B" stroke-width="1.9" stroke-linecap="round"><path d="M3 12h4l3-7 4 14 3-7h4"></path></svg>
+            <div style="font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; color: #ABA298;">hummed_riff.wav · 12.4 s</div>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); gap: 16px;">
+
+          <div style="display: flex; flex-direction: column; gap: 13px;">
+            <div style="display: flex; flex-direction: column; gap: 7px;">
+              <div style="font-size: 10px; font-weight: 600; letter-spacing: 0.09em; color: #5E574F;">VOICING</div>
+              <div style="display: flex; gap: 4px;">
+                <div style="{{voices.one.box}}" onClick="{{voices.one.pick}}"><div style="{{voices.one.txt}}">1 voice</div></div>
+                <div style="{{voices.three.box}}" onClick="{{voices.three.pick}}"><div style="{{voices.three.txt}}">3 voices</div></div>
+              </div>
+              <div style="display: flex; flex-direction: column; gap: 5px; padding: 10px 11px; border-radius: 6px; background: #1D1A17; border: 1px solid #2C2723;">
+                <div style="display: flex; align-items: center; gap: 9px; {{voice1.dim}}">
+                  <div style="width: 7px; height: 7px; border-radius: 2px; background: #3FBFC4;"></div>
+                  <div style="font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; color: #ABA298;">V1</div>
+                  <div style="font-size: 12px; color: #D8D1C8;">melody, as detected</div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 9px; {{voice2.dim}}">
+                  <div style="width: 7px; height: 7px; border-radius: 2px; background: #E3A03C;"></div>
+                  <div style="font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; color: #ABA298;">V2</div>
+                  <div style="font-size: 12px; color: #D8D1C8;">bass, one octave down</div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 9px; {{voice3.dim}}">
+                  <div style="width: 7px; height: 7px; border-radius: 2px; background: #A98BD8;"></div>
+                  <div style="font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; color: #ABA298;">V3</div>
+                  <div style="font-size: 12px; color: #D8D1C8;">harmony, a fifth up</div>
+                </div>
+              </div>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 7px;">
+              <div style="font-size: 10px; font-weight: 600; letter-spacing: 0.09em; color: #5E574F;">TARGET MACHINE</div>
+              <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px;">
+                <div style="display: flex; gap: 4px;">
+                  <div style="{{clock.pal.box}}" onClick="{{clock.pal.pick}}"><div style="{{clock.pal.txt}}">PAL</div></div>
+                  <div style="{{clock.ntsc.box}}" onClick="{{clock.ntsc.pick}}"><div style="{{clock.ntsc.txt}}">NTSC</div></div>
+                </div>
+                <div style="display: flex; gap: 4px;">
+                  <div style="{{chip.a.box}}" onClick="{{chip.a.pick}}"><div style="{{chip.a.txt}}">6581</div></div>
+                  <div style="{{chip.b.box}}" onClick="{{chip.b.pick}}"><div style="{{chip.b.txt}}">8580</div></div>
+                </div>
+              </div>
+              <div style="font-size: 11.5px; color: #6F675E; line-height: 1.5;">Frequency table is generated against the {{clockName}} system clock — {{clockHz}} Hz.</div>
+            </div>
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 13px;">
+            <div style="display: flex; flex-direction: column; gap: 7px;">
+              <div style="font-size: 10px; font-weight: 600; letter-spacing: 0.09em; color: #5E574F;">WAVEFORM</div>
+              <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 5px;">
+                <div style="{{wave.tri.box}}" onClick="{{wave.tri.pick}}">
+                  <svg width="30" height="15" viewBox="0 0 40 20" fill="none" stroke="{{wave.tri.ink}}" stroke-width="1.8" stroke-linejoin="round"><path d="M1 16l9-12 10 12 10-12 9 12"></path></svg>
+                  <div style="{{wave.tri.txt}}">Triangle</div>
+                </div>
+                <div style="{{wave.saw.box}}" onClick="{{wave.saw.pick}}">
+                  <svg width="30" height="15" viewBox="0 0 40 20" fill="none" stroke="{{wave.saw.ink}}" stroke-width="1.8" stroke-linejoin="round"><path d="M1 16l12-12v12l12-12v12l12-12"></path></svg>
+                  <div style="{{wave.saw.txt}}">Sawtooth</div>
+                </div>
+                <div style="{{wave.pul.box}}" onClick="{{wave.pul.pick}}">
+                  <svg width="30" height="15" viewBox="0 0 40 20" fill="none" stroke="{{wave.pul.ink}}" stroke-width="1.8" stroke-linejoin="round"><path d="M1 16h7V4h10v12h9V4h11"></path></svg>
+                  <div style="{{wave.pul.txt}}">Pulse</div>
+                </div>
+                <div style="{{wave.noi.box}}" onClick="{{wave.noi.pick}}">
+                  <svg width="30" height="15" viewBox="0 0 40 20" fill="none" stroke="{{wave.noi.ink}}" stroke-width="1.8" stroke-linejoin="round"><path d="M1 12l3-7 3 11 3-9 3 6 3-10 3 12 3-8 3 5 3-9 3 10 3-6 3 4"></path></svg>
+                  <div style="{{wave.noi.txt}}">Noise</div>
+                </div>
+              </div>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 9px; padding: 12px 13px; border-radius: 7px; background: #201D1A; border: 1px solid #302B26;">
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <div style="font-size: 10px; font-weight: 600; letter-spacing: 0.09em; color: #5E574F;">ENVELOPE</div>
+                <div style="flex-grow: 1;"></div>
+                <div style="font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 10.5px; color: #6F675E;">AD {{env.ad}} · SR {{env.sr}}</div>
+              </div>
+
+              <div style="display: flex; gap: 13px; align-items: center;">
+                <svg width="150" height="46" viewBox="0 0 204 46" fill="none" style="flex-shrink: 0;">
+                  <rect x="0.5" y="0.5" width="203" height="45" rx="3" fill="#17150F" stroke="#2C2723"></rect>
+                  <polyline points="{{env.points}}" fill="none" stroke="{{accent}}" stroke-width="1.8" stroke-linejoin="round"></polyline>
+                </svg>
+                <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 6px;">
+                  <div style="display: flex; align-items: center; gap: 9px;">
+                    <div style="width: 42px; flex-shrink: 0; font-size: 11px; color: #8D857B;">Attack</div>
+                    <input class="rng" type="range" min="0" max="15" value="{{adsr.a.val}}" onChange="{{adsr.a.set}}">
+                    <div style="width: 15px; flex-shrink: 0; text-align: right; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; color: #D8D1C8;">{{adsr.a.val}}</div>
+                  </div>
+                  <div style="display: flex; align-items: center; gap: 9px;">
+                    <div style="width: 42px; flex-shrink: 0; font-size: 11px; color: #8D857B;">Decay</div>
+                    <input class="rng" type="range" min="0" max="15" value="{{adsr.d.val}}" onChange="{{adsr.d.set}}">
+                    <div style="width: 15px; flex-shrink: 0; text-align: right; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; color: #D8D1C8;">{{adsr.d.val}}</div>
+                  </div>
+                  <div style="display: flex; align-items: center; gap: 9px;">
+                    <div style="width: 42px; flex-shrink: 0; font-size: 11px; color: #8D857B;">Sustain</div>
+                    <input class="rng" type="range" min="0" max="15" value="{{adsr.s.val}}" onChange="{{adsr.s.set}}">
+                    <div style="width: 15px; flex-shrink: 0; text-align: right; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; color: #D8D1C8;">{{adsr.s.val}}</div>
+                  </div>
+                  <div style="display: flex; align-items: center; gap: 9px;">
+                    <div style="width: 42px; flex-shrink: 0; font-size: 11px; color: #8D857B;">Release</div>
+                    <input class="rng" type="range" min="0" max="15" value="{{adsr.r.val}}" onChange="{{adsr.r.set}}">
+                    <div style="width: 15px; flex-shrink: 0; text-align: right; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; color: #D8D1C8;">{{adsr.r.val}}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 10px; padding: 10px 13px; border-radius: 6px; background: #1D1A17; border: 1px dashed #3A342E;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6F675E" stroke-width="1.7" stroke-linecap="round" style="flex-shrink: 0;"><circle cx="12" cy="12" r="9"></circle><path d="M12 16.5v-5M12 8v.2"></path></svg>
+          <div style="font-size: 11.5px; color: #8D857B; line-height: 1.5;">Pitch detection is monophonic. The extra voices are derived from the same melody line, not transcribed independently.</div>
+        </div>
+
+        <div style="flex-grow: 1;"></div>
+
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <div style="flex-grow: 1; display: flex; align-items: center; gap: 9px; height: 32px; padding: 0 11px; border-radius: 5px; background: #17150F; border: 1px solid #2C2723; overflow: hidden;">
+            <div style="font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 10px; color: #5E574F; flex-shrink: 0;">CLI</div>
+            <div style="font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; color: #9C948A; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{audioCmd}}</div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 8px; height: 34px; padding: 0 18px; border-radius: 5px; background: {{accent}};">
+            <div style="font-size: 13px; font-weight: 600; color: #17150F;">Generate .sid</div>
+          </div>
+        </div>
+      </sc-if>
+
+    </div>
+  </div>
+
+  <!-- ── activity strip ────────────────────────────────────── -->
+  <div style="height: 40px; flex-shrink: 0; display: flex; align-items: center; gap: 11px; padding: 0 14px; background: #1C1A17; border-top: 1px solid #34302B;">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#6F675E" stroke-width="1.9" stroke-linecap="round"><path d="M6 9l6 6 6-6"></path></svg>
+    <div style="font-size: 10px; font-weight: 600; letter-spacing: 0.09em; color: #5E574F;">ACTIVITY</div>
+    <div style="width: 1px; height: 14px; background: #34302B;"></div>
+    <div style="width: 6px; height: 6px; border-radius: 50%; background: {{accent}};"></div>
+    <div style="font-size: 12px; color: #C6BEB4;">Validated Neon_Harbour.sid</div>
+    <div style="font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; color: #6F675E;">2 warnings · 0.04 s</div>
+    <div style="flex-grow: 1;"></div>
+    <div style="font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; color: #5E574F;">6 runs this session</div>
+  </div>
+
+</div>
+</x-dc>
+
+<script data-dc-script data-props='{"accent":{"editor":"color","default":"#3FBFC4","options":["#3FBFC4","#E3A03C","#A98BD8","#5FC08A"]},"depsReady":{"editor":"boolean","default":true},"$preview":{"width":1180,"height":760}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = {
+      view: 'inspect',
+      strict: false,
+      noFilter: false,
+      model: 'auto',
+      subtune: 1,
+      target: 'auto',
+      force: false,
+      voices: 3,
+      wave: 'triangle',
+      clock: 'pal',
+      chip: '6581',
+      a: 0, d: 4, s: 12, r: 6,
+    };
+  }
+
+  renderVals() {
+    const A = this.props.accent ?? '#3FBFC4';
+    const ready = this.props.depsReady !== false;
+    const st = this.state;
+    const MONO = "'JetBrains Mono', ui-monospace, Menlo, monospace";
+
+    // ---- left rail ----------------------------------------------------
+    const navRow = (id) => {
+      const on = st.view === id;
+      return {
+        box: 'display:flex;align-items:center;gap:10px;height:38px;padding:0 11px;border-radius:6px;cursor:pointer;'
+          + (on ? 'background:#292521;box-shadow:inset 2px 0 0 ' + A + ';' : 'background:transparent;'),
+        ink: on ? A : '#8D857B',
+        txt: 'font-size:12.5px;letter-spacing:-0.003em;'
+          + (on ? 'color:#F0EBE4;font-weight:600;' : 'color:#ABA298;font-weight:450;'),
+        pick: () => this.setState({ view: id }),
+      };
+    };
+
+    // ---- segmented button ---------------------------------------------
+    const seg = (on, onPick, grow) => ({
+      box: 'display:flex;align-items:center;justify-content:center;height:30px;padding:0 12px;border-radius:5px;cursor:pointer;'
+        + (grow ? 'flex-grow:1;' : '')
+        + (on
+          ? 'background:rgba(63,191,196,0.14);border:1px solid ' + A + ';'
+          : 'background:#262019;border:1px solid #3A342E;'),
+      txt: 'font-size:12px;white-space:nowrap;'
+        + (on ? 'color:' + A + ';font-weight:600;' : 'color:#ABA298;font-weight:450;'),
+      pick: onPick,
+    });
+
+    // ---- checkbox ------------------------------------------------------
+    const check = (on, toggle) => ({
+      box: 'display:flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:3.5px;flex-shrink:0;'
+        + (on ? 'background:' + A + ';border:1px solid ' + A + ';' : 'background:#17150F;border:1px solid #47413A;'),
+      tick: on ? 'opacity:1;' : 'opacity:0;',
+      toggle,
+    });
+
+    // ---- ADSR envelope --------------------------------------------------
+    const W = 204, H = 46;
+    const ta = st.a + 1.2, td = st.d + 1.2, th = 7, tr = st.r + 1.2;
+    const tot = ta + td + th + tr;
+    const x1 = W * ta / tot;
+    const x2 = x1 + W * td / tot;
+    const x3 = x2 + W * th / tot;
+    const sy = H - 3 - (H - 8) * (st.s / 15);
+    const pts = '0,' + (H - 3)
+      + ' ' + x1.toFixed(1) + ',5'
+      + ' ' + x2.toFixed(1) + ',' + sy.toFixed(1)
+      + ' ' + x3.toFixed(1) + ',' + sy.toFixed(1)
+      + ' ' + (W - 1) + ',' + (H - 3);
+    const hex2 = (n) => '$' + n.toString(16).toUpperCase().padStart(2, '0');
+    const slider = (key) => ({
+      val: st[key],
+      set: (e) => this.setState({ [key]: Number(e.target.value) }),
+    });
+
+    // ---- validate verdict ------------------------------------------------
+    const strictFail = st.strict;
+    const verdict = strictFail
+      ? { title: '2 warnings — failing under strict mode', sub: 'No specification errors. Strict mode promotes every warning.', ink: '#E3A03C', bg: 'rgba(227,160,60,0.07)', line: 'rgba(227,160,60,0.28)', code: '1' }
+      : { title: 'Passes — 2 warnings', sub: 'No specification errors. The file is well-formed PSID v2.', ink: A, bg: 'rgba(63,191,196,0.07)', line: 'rgba(63,191,196,0.26)', code: '0' };
+
+    const sevChip = (sev) => sev === 'ERROR'
+      ? { ink: '#E0654E', chipBg: 'rgba(224,101,78,0.15)' }
+      : { ink: '#E3A03C', chipBg: 'rgba(227,160,60,0.15)' };
+
+    const findings = [
+      { sev: 'WARN', msg: 'Released field is set to a free-form string. HVSC expects "YYYY Publisher" so the collection indexer can parse the year.', ref: 'style · header offset $56' },
+      { sev: 'WARN', msg: 'Speed word marks subtune 2 as CIA-driven while subtunes 1 and 3 use the vertical blank. Mixed timing is legal but rarely intended.', ref: 'PSID v2NG §4 · speed' },
+    ].map((f) => Object.assign({}, f, sevChip(f.sev)));
+
+    // ---- dependency state -------------------------------------------------
+    const deps = ready
+      ? { dot: A, label: 'tools ready', sidplay: '2.6.1', verInk: '#6F675E' }
+      : { dot: '#E0654E', label: 'sidplayfp missing', sidplay: 'absent', verInk: '#E0654E' };
+
+    const depsPanel = ready
+      ? { bg: '#201D1A', line: '#302B26', ink: '#E4DED6', title: 'sidplayfp 2.6.1',
+          body: 'ReSIDfp emulation, 6581 filter curve from the header. ffmpeg 7.1 handles anything that is not WAV.',
+          cmd: 'which sidplayfp → /usr/bin/sidplayfp' }
+      : { bg: 'rgba(224,101,78,0.07)', line: 'rgba(224,101,78,0.28)', ink: '#E0654E', title: 'sidplayfp not on PATH',
+          body: 'Rendering needs the external emulator. Install it, then reopen this panel — the check re-runs automatically.',
+          cmd: 'sudo apt install sidplayfp' };
+
+    // ---- CLI mirrors -------------------------------------------------------
+    const modelArg = st.model === 'auto' ? '' : ' --model ' + st.model;
+    const filterArg = st.noFilter ? ' --no-filter' : '';
+    const renderCmd = 'sidconverter render Neon_Harbour.sid -o Neon_Harbour.wav -t 180 -s '
+      + st.subtune + modelArg + filterArg;
+
+    const tgt = st.target === 'auto' ? '' : ' --to ' + st.target;
+    const convertCmd = 'sidconverter convert Neon_Harbour.sid -o Neon_Harbour_rsid.sid'
+      + tgt + (st.force ? ' --force' : '');
+
+    const audioCmd = 'sidconverter from-audio hummed_riff.wav -o riff.sid --voices ' + st.voices
+      + ' --waveform ' + st.wave
+      + ' --adsr ' + st.a + ',' + st.d + ',' + st.s + ',' + st.r
+      + ' --clock ' + st.clock + ' --model ' + st.chip;
+
+    const dimmed = st.voices === 1 ? 'opacity:0.32;' : 'opacity:1;';
+
+    return {
+      accent: A,
+      isInspect: st.view === 'inspect',
+      isValidate: st.view === 'validate',
+      isRender: st.view === 'render',
+      isConvert: st.view === 'convert',
+      isAudio: st.view === 'audio',
+
+      nav: {
+        inspect: navRow('inspect'),
+        validate: navRow('validate'),
+        render: navRow('render'),
+        convert: navRow('convert'),
+        audio: navRow('audio'),
+      },
+
+      deps, depsPanel,
+
+      strict: check(st.strict, () => this.setState({ strict: !st.strict })),
+      nofilter: check(st.noFilter, () => this.setState({ noFilter: !st.noFilter })),
+      force: Object.assign(
+        check(st.force, () => this.setState({ force: !st.force })),
+        { hint: st.force ? 'the file will be written as-is' : 'required before Convert is enabled' }
+      ),
+
+      verdict,
+      findings,
+
+      model: {
+        auto: seg(st.model === 'auto', () => this.setState({ model: 'auto' })),
+        a: seg(st.model === '6581', () => this.setState({ model: '6581' })),
+        b: seg(st.model === '8580', () => this.setState({ model: '8580' })),
+      },
+      sub: {
+        a: seg(st.subtune === 1, () => this.setState({ subtune: 1 })),
+        b: seg(st.subtune === 2, () => this.setState({ subtune: 2 })),
+        c: seg(st.subtune === 3, () => this.setState({ subtune: 3 })),
+      },
+      target: {
+        auto: seg(st.target === 'auto', () => this.setState({ target: 'auto' })),
+        p: seg(st.target === 'PSID', () => this.setState({ target: 'PSID' })),
+        r: seg(st.target === 'RSID', () => this.setState({ target: 'RSID' })),
+      },
+      convertBtn: st.force
+        ? { bg: A, ink: '#17150F', line: A }
+        : { bg: '#231F1B', ink: '#5E574F', line: '#332E29' },
+
+      voices: {
+        one: seg(st.voices === 1, () => this.setState({ voices: 1 }), true),
+        three: seg(st.voices === 3, () => this.setState({ voices: 3 }), true),
+      },
+      voice1: { dim: 'opacity:1;' },
+      voice2: { dim: dimmed },
+      voice3: { dim: dimmed },
+
+      wave: {
+        tri: this._wave('triangle', 'Triangle', A),
+        saw: this._wave('sawtooth', 'Sawtooth', A),
+        pul: this._wave('pulse', 'Pulse', A),
+        noi: this._wave('noise', 'Noise', A),
+      },
+
+      clock: {
+        pal: seg(st.clock === 'pal', () => this.setState({ clock: 'pal' }), true),
+        ntsc: seg(st.clock === 'ntsc', () => this.setState({ clock: 'ntsc' }), true),
+      },
+      chip: {
+        a: seg(st.chip === '6581', () => this.setState({ chip: '6581' }), true),
+        b: seg(st.chip === '8580', () => this.setState({ chip: '8580' }), true),
+      },
+      clockName: st.clock === 'pal' ? 'PAL' : 'NTSC',
+      clockHz: st.clock === 'pal' ? '985 248' : '1 022 730',
+
+      adsr: { a: slider('a'), d: slider('d'), s: slider('s'), r: slider('r') },
+      env: {
+        points: pts,
+        ad: hex2((st.a << 4) | st.d),
+        sr: hex2((st.s << 4) | st.r),
+      },
+
+      renderCmd, convertCmd, audioCmd,
+    };
+  }
+
+  _wave(id, label, A) {
+    const on = this.state.wave === id;
+    return {
+      box: 'display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;height:56px;border-radius:6px;cursor:pointer;'
+        + (on
+          ? 'background:rgba(63,191,196,0.13);border:1px solid ' + A + ';'
+          : 'background:#262019;border:1px solid #3A342E;'),
+      ink: on ? A : '#8D857B',
+      txt: 'font-size:11px;' + (on ? 'color:' + A + ';font-weight:600;' : 'color:#8D857B;font-weight:450;'),
+      pick: () => this.setState({ wave: id }),
+    };
+  }
+}
+</script>
+</body>
+</html>

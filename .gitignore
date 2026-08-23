@@ -1,2 +1,5 @@
 __pycache__/
 *.pyc
+
+# Seeded design canvas — regenerate with the design skill helper from design/*.dc.html
+design/sidconverter-interface.html
