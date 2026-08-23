@@ -1,9 +1,9 @@
 {
   "artboards": [
     { "file": "Main.dc.html", "x": 0, "y": 0, "w": 1180, "h": 760, "title": "Main window — live" },
-    { "file": "States.dc.html", "x": 1300, "y": 0, "w": 940, "h": 1080, "title": "Run states" },
-    { "file": "Ergonomics.dc.html", "x": 0, "y": 1220, "w": 1180, "h": 1020, "title": "Ergonomics" },
-    { "file": "System.dc.html", "x": 1300, "y": 1220, "w": 1180, "h": 900, "title": "System" }
+    { "file": "States.dc.html", "x": 1300, "y": 0, "w": 940, "h": 1360, "title": "Run states" },
+    { "file": "Ergonomics.dc.html", "x": 0, "y": 1500, "w": 1180, "h": 1080, "title": "Ergonomics" },
+    { "file": "System.dc.html", "x": 1300, "y": 1500, "w": 1180, "h": 1100, "title": "System" }
   ],
   "annotations": [
     {

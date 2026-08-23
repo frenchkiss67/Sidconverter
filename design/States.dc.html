@@ -15,7 +15,7 @@
   </style>
 </helmet>
 
-<div style="width: 940px; min-height: 1080px; background: #191714; color: #F0EBE4; font-family: 'Space Grotesk', system-ui, 'Helvetica Neue', sans-serif; font-size: 13px; padding: 26px 28px 30px 28px; display: flex; flex-direction: column; gap: 20px; box-sizing: border-box;">
+<div style="width: 940px; min-height: 1340px; background: #191714; color: #F0EBE4; font-family: 'Space Grotesk', system-ui, 'Helvetica Neue', sans-serif; font-size: 13px; padding: 26px 28px 30px 28px; display: flex; flex-direction: column; gap: 20px; box-sizing: border-box;">
 
   <div style="display: flex; flex-direction: column; gap: 5px;">
     <div style="font-size: 21px; font-weight: 600; letter-spacing: -0.018em;">Run states</div>
@@ -89,7 +89,7 @@
         <div style="display: flex; align-items: baseline;">
           <div style="font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; color: #D8D1C8;">01:14 <span style="color: #5E574F;">/ 03:00</span></div>
           <div style="flex-grow: 1;"></div>
-          <div style="font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; color: #6F675E;">~26 s remaining</div>
+          <div style="font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; color: #6F675E;">~11 s remaining</div>
         </div>
       </div>
 
@@ -125,7 +125,7 @@
         </div>
       </div>
     </div>
-    <div style="font-size: 12px; color: #6F675E; line-height: 1.55;">The work happens on a background thread, so the window stays responsive — the rail is still clickable and switching views does not abort the run. Cancel is always reachable; the CLI has no equivalent.</div>
+    <div style="font-size: 12px; color: #6F675E; line-height: 1.55;">The work happens on a background thread, so the window stays responsive — the rail is still clickable and switching views does not abort the run. Cancel is reachable without killing the process the way Ctrl-C does in the CLI.</div>
   </div>
 
   <!-- ── 3. failed ──────────────────────────────────────────── -->
@@ -171,7 +171,7 @@
           <div style="font-size: 12.5px; color: #ABA298;">Show full output</div>
         </div>
         <div style="flex-grow: 1;"></div>
-        <div style="font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; color: #5E574F;">exit 2 · 0.01 s</div>
+        <div style="font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; color: #5E574F;">exit 1 · 0.01 s</div>
       </div>
     </div>
     <div style="font-size: 12px; color: #6F675E; line-height: 1.55;">Every failure names the machine-specific fix and offers it as one copyable line. The raw subprocess output is one click away, never the first thing you read.</div>
@@ -194,7 +194,7 @@
         </div>
         <div style="display: flex; flex-direction: column; gap: 3px;">
           <div style="font-size: 14px; font-weight: 600;">Neon_Harbour.wav</div>
-          <div style="font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11.5px; color: #6F675E;">~/Renders/ · 31.0 MB · 3:00 · 48 kHz 16-bit</div>
+          <div style="font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11.5px; color: #6F675E;">~/Renders/ · 34.6 MB · 3:00 · 48 kHz 16-bit</div>
         </div>
         <div style="flex-grow: 1;"></div>
         <div style="display: flex; align-items: center; gap: 7px; height: 32px; padding: 0 14px; border-radius: 5px; background: #3FBFC4;">
@@ -253,7 +253,7 @@
         </div>
       </div>
     </div>
-    <div style="font-size: 12px; color: #6F675E; line-height: 1.55;">Success is not a toast that vanishes. The result is a durable object you can play, reveal or extend — and the obvious next action for a 3-subtune file is offered rather than left for you to repeat by hand.</div>
+    <div style="font-size: 12px; color: #6F675E; line-height: 1.55;">Success is not a toast that vanishes. The result stays on screen, ready to play, reveal or extend — and the obvious next action for a 3-subtune file is offered rather than left for you to repeat by hand.</div>
   </div>
 
 </div>
